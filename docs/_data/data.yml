@@ -1,40 +1,18 @@
-#
-# Be aware that even a small syntax error here can lead to failures in output.
-#
-
 sidebar:
-    about: False # set to False or comment line if you want to remove the "how to use?" in the sidebar
-    education: True # set to False if you want education in main section instead of in sidebar
+    about: False
+    education: True
 
     # Profile information
     name: Blayne Moseley
     tagline: Backend Engineer and Architect
-    avatar: profile.png  #place a 100x100 picture inside /assets/images/ folder and provide the name of the file below
+    avatar: profile.png
 
-    # Sidebar links
     email: bmoseley at gmail.com
     phone: 214 598 9605
-    website: elmoselyee.github.io
+    website: blaynemoseley.com
     linkedin: blaynemoseley
     github: elmoselyee
-    telegram: # add your nickname without '@' sign
-    gitlab:
-    bitbucket:
-#    twitter: '@webjeda'
-#    stack-overflow: # Number/Username, e.g. 123456/alandoe
-#    codewars:
-#    goodreads: # Number-Username, e.g. 123456-alandoe
     pdf: https://bmoseley-public.s3.amazonaws.com/blayne_moseley_resume.pdf
-
-#    languages:
-#      - idiom: English
-#        level: Native
-#
-#      - idiom: French
-#        level: Professional
-#
-#      - idiom: Spanish
-#        level: Professional
 
     soft-skills:
       - item: DevOps Mentality
@@ -179,33 +157,6 @@ experiences:
         using multi-threading
         
         <i>PHP, MySQL</i>
-#projects:
-#    title: Projects
-#    intro: >
-#      You can list your side projects or open source libraries in this
-#      section. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-#      Vestibulum et ligula in nunc bibendum fringilla a eu lectus.
-#    assignments:
-#      - title: Velocity
-#        link: "#hook"
-#        tagline: "A responsive website template designed to help startups promote, market and sell their products."
-#
-#      - title: DevStudio
-#        link: "#"
-#        tagline: "A responsive website template designed to help web developers/designers market their services."
-#
-#      - title: Tempo
-#        link: "#"
-#        tagline: "A responsive website template designed to help startups promote their products or services and to attract users &amp; investors"
-#
-#      - title: Atom
-#        link: "#"
-#        tagline: "A comprehensive website template solution for startups/developers to market their mobile apps."
-#
-#      - title: Delta
-#        link: "#"
-#        tagline: "A responsive Bootstrap one page theme designed to help app developers promote their mobile apps"
-
 
 skills:
     title: Skills &amp; Proficiency

@@ -2,8 +2,10 @@
 
 This is the source code for [blaynemoseley.com](blaynemoseley.com).
 
-It using Jekyll for static site generation, GitHub Actions for build
-and deploy, and GitHub pages for serving the content.
+It uses [Jekyll](https://jekyllrb.com/) for static site generation, 
+[GitHub Actions](https://docs.github.com/en/actions) for build and 
+deploy, and [GitHub Pages](https://pages.github.com/) for serving 
+the content.
 
 # Usage
 
