@@ -1,0 +1,168 @@
+#
+# Be aware that even a small syntax error here can lead to failures in output.
+#
+
+sidebar:
+    about: False # set to False or comment line if you want to remove the "how to use?" in the sidebar
+    education: True # set to False if you want education in main section instead of in sidebar
+
+    # Profile information
+    name: Blayne Moseley
+    tagline: Backend Engineer and Architect
+    avatar: profile.png  #place a 100x100 picture inside /assets/images/ folder and provide the name of the file below
+
+    # Sidebar links
+    email: bmoseley at gmail.com
+    phone: 214 598 9605
+    website: elmoselyee.github.io
+    linkedin: blaynemoseley
+    github: elmoselyee
+    telegram: # add your nickname without '@' sign
+    gitlab:
+    bitbucket:
+#    twitter: '@webjeda'
+#    stack-overflow: # Number/Username, e.g. 123456/alandoe
+#    codewars:
+#    goodreads: # Number-Username, e.g. 123456-alandoe
+    pdf: https://bmoseley-public.s3.amazonaws.com/blayne_moseley_resume.pdf
+
+#    languages:
+#      - idiom: English
+#        level: Native
+#
+#      - idiom: French
+#        level: Professional
+#
+#      - idiom: Spanish
+#        level: Professional
+
+    interests:
+      - item: Climbing
+        link:
+
+      - item: Snowboarding
+        link:
+
+      - item: Cooking
+        link:
+
+career-profile:
+    title: Who I Am
+    summary: |
+      Hi, I'm Blayne. I am a self-motivated tech enthusaist who loves 
+      continuous learning and improving. I've been hacking away since I 
+      was 14, when I learned programming by accident when I read the PHP 
+      manual because I wanted to make my Amazon Associates website more 
+      dynamic.
+
+education:
+    - university: University of Texas at Dallas
+      time: 2006 - 2010
+
+experiences:
+    - role: Enterprise Architect
+      time: 2020 - Present
+      company: Solera, Westlake, TX (Aquired DealerSocket)
+      details: |
+        - Established enterprise standards across seven product lines
+        - Identified multiple microservices fit for reuse across products
+        then evangelized and hardened those services to be enterpriseready
+        - Helped design the company-wide data platform including data
+        lake and data warehouse used for reporting across multiple
+        independent products
+    - role: Application Architect
+      time: 2018 - 2020
+      company: DealerSocket, Irving, TX
+      details: |
+        - Defined architecture patterns for implementing highly scalable
+        microservices that decomposed the monolith
+        - Focused on numerous cost-savings initiatives, from blank slate to
+        production, resulting in savings of over $10k/mo
+        - Modernized our tech stack through adoption of containers,
+        serverless architecture patterns, and event-based messaging
+        - Regularly facilitated knowledge sharing sessions on latest
+        learnings and best practices
+        - Relentlessly advocated for applying devops best practices
+        throughout the business for the purpose of improving quality,
+        cost, and efficiency of our processes
+    - role: Principal Software Engineer
+      time: 2015 - 2018
+      company: DealerSocket, Irving, TX
+      details: |
+        - Designed and led a team to implement a highly-scalable big
+        data analytics platform using Apache Kafka, AWS S3, Apache
+        Spark, and AWS Redshift
+        - Researched, introduced, and evolved monitoring stack involving
+        Telegraf, InfluxDB, Grafana, and Kapacitor, allowing all engineers
+        to make data-driven decisions
+        - Lead a number of scrum teams with high predictability rate of
+        delivery across a number of application areas
+        - Played a key role in the early experimental phase of microservice
+        design which helped us define the modern tech stack using Java,
+        Spring Boot, Docker, AWS ECS
+    - role: Senior Software Engineer
+      time: 2012 - 2015
+      company: DealerSocket, Irving, TX
+      details: |
+        - Overhauled product-wide testing platform to allow separation of
+        unit and integration tests for more rapid feedback earlier in
+        development cycle
+        - Applied profiling techniques to identify inefficient code, resulting
+        in roughly 2x speed improvement across the entire application
+    - role: Software Engineer
+      time: 2010 - 2012
+      company: AmeriFlex, Frisco, TX
+      details: |
+        - Worked with a team to build third-party benefits administration
+        application which controlled nearly $20m of FSA and HSA
+        balances
+#projects:
+#    title: Projects
+#    intro: >
+#      You can list your side projects or open source libraries in this
+#      section. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+#      Vestibulum et ligula in nunc bibendum fringilla a eu lectus.
+#    assignments:
+#      - title: Velocity
+#        link: "#hook"
+#        tagline: "A responsive website template designed to help startups promote, market and sell their products."
+#
+#      - title: DevStudio
+#        link: "#"
+#        tagline: "A responsive website template designed to help web developers/designers market their services."
+#
+#      - title: Tempo
+#        link: "#"
+#        tagline: "A responsive website template designed to help startups promote their products or services and to attract users &amp; investors"
+#
+#      - title: Atom
+#        link: "#"
+#        tagline: "A comprehensive website template solution for startups/developers to market their mobile apps."
+#
+#      - title: Delta
+#        link: "#"
+#        tagline: "A responsive Bootstrap one page theme designed to help app developers promote their mobile apps"
+
+
+skills:
+    title: Skills &amp; Proficiency
+
+    toolset:
+      - name: AWS & Serverless
+        level: 98%
+
+      - name: Docker & AWS ECS
+        level: 98%
+
+      - name: Python & Flask
+        level: 94%
+
+      - name: Microservice Design
+        level: 90%
+
+      - name: DevOps & Observability
+        level: 85%
+
+      - name: Java & Spring Boot
+        level: 70%
+
