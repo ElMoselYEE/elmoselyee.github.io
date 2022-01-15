@@ -1,0 +1,22 @@
+{% assign soft-skills = site.data.data.sidebar.soft-skills %}
+{% if soft-skills %}
+<div class="soft-skills-container container-block">
+
+  <h2 class="container-block-title">
+    Soft Skills
+  </h2>
+
+  <ul class="list-unstyled soft-skills-list">
+    {% for skill in soft-skills %}
+
+      {% if skill.link %}
+      <li><a href="{{ skill.link }}">{{ skill.item }}</a></li>
+      {% else %}
+      <li>{{ skill.item }}</li>
+      {% endif %}
+
+    {% endfor %}
+  </ul>
+
+</div><!--//soft-skills-->
+{% endif %}
