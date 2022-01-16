@@ -71,8 +71,9 @@ experiences:
         As the application architect for the Inventory+ platform, it was my duty
         to both decompose new system requirements as well as define the technical
         runway needed to support those requirements. I scoped these epics out and
-        worked closely with the engineering teams to refine the requirements. Often,
-        I built proof-of-concepts to alleviate any uncertainty the teams might have.
+        worked closely with the engineering teams to refine the requirements. On 
+        multiple occasions I built POCs to alleviate any uncertainty the teams 
+        might have.
         
         I carried the platform on a journey to over a dozen microservices. I built
         these services with cutting-edge AWS cloud technology including managed and
