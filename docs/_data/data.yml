@@ -25,19 +25,17 @@ sidebar:
         link:
 
 career-profile:
-    title: Who I Am
+    title: My Story
     summary: |
-      Hi, I'm Blayne. 
+      Hi, I'm Blayne, and I've been tinkering with technology nearly my
+      entire life. I entered the programming world by accident when I was
+      14 as I sought to make my Amazon Associates referral site more dynamic.
+      After I spent a few nights reading through the PHP manual, I looked
+      back and realized...this is programming. I've been hooked ever since.
       
-      I am a self-motivated tech enthusaist, who loves continuous learning 
-      and improving. I've been hacking away since I was 14, when I learned
-      programming by accident by reading the PHP manual because I wanted to 
-      make my Amazon Associates referral site more dynamic. At 16 I was 
-      doing freelance jobs to make extra side money. When college came 
-      around, it was clear what my career path was going to be. 
-      
-      Since then, I haven't stopped learning and building. As long as there's
-      problems to solve, I likely never will.
+      As I explored this discipline more deeply--from freelancing to designing
+      to building ecommerce websites--through high school and college--I realized my 
+      true passion of building APIs and designing systems.
 
 education:
     - university: University of Texas at Dallas
@@ -50,9 +48,9 @@ experiences:
       details: |
         My role as enterprise architect involved understanding the issues
         faced by engineering teams across the enterprise and to guide these
-        teams to work efficiently by sharing lessons learned as well as
-        establishing standards for common processes such as the definition 
-        of a production-ready microservice. 
+        teams to work efficiently. I accomplished this by sharing lessons learned 
+        as well as establishing standards for common processes such as the 
+        definition of a production-ready microservice. 
         
         Further, I designed architectures and formed execution plans for numerous 
         key company initiatives including search infrastructure and SSO. I
@@ -63,7 +61,7 @@ experiences:
         
         - Created production-readiness microservice standards
         - Created service initiative process
-        - Hardened and evangelized two microservices for reuse within the company
+        - Hardened and evangelized multiple microservices for reuse within the company
     - role: Application Architect
       time: 2018 - Current
       company: DealerSocket, Irving, TX
@@ -75,10 +73,10 @@ experiences:
         multiple occasions I built POCs to alleviate any uncertainty the teams 
         might have.
         
-        I carried the platform on a journey to over a dozen microservices. I built
-        these services with cutting-edge AWS cloud technology including managed and
-        serverless offerings resulting in extremely reliable, scalable, maintainable,
-        and efficient services.
+        I carried the platform on a journey to over a dozen microservices. I oversaw
+        these services from ideation to release. To ensure highly reliable and scalable
+        services, I employed the use of cloud-native architectures including serverless
+        and auto-scaling infrastructures.
         
         Another key arc throughout this role was a focus on DevOps, both from a technical
         capability as well as a people and process standpoint. Through my leadership our 
@@ -87,7 +85,7 @@ experiences:
         
         Accomplishments:
         - Established and refined architecture patterns and practices for new microservices
-        - Overhauled photo serving infrastructure, shaving a massive 15% off the overall 
+        - Overhauled photo serving infrastructure, shaving 15% off the overall 
         platform infrastructure cost
         - Aligned seven teams by holding regular tech sessions to share and distill 
         knowledge
@@ -98,8 +96,8 @@ experiences:
       time: 2015 - 2018
       company: DealerSocket, Irving, TX
       details: |
-        As principal software engineer, I led numerous teams to achieve top-tier
-        delivery rates by following the practices of scrum and agile. Mentoring
+        During my time as principal software engineer, I was able to consistenly 
+        deliver projects on time with high quality results. Mentoring
         other engineers, on and off my teams, is something I enjoyed a lot as 
         I really valued the mentoring I received earlier on in my career. I
         presented a number of tech talks that helped teams learn their way
@@ -109,10 +107,9 @@ experiences:
         various projects including the inception of our microservice's tech
         stack, our monitoring stack, and data analysis for our top clients.
         
-        Just before I was promoted to architect I designed and implemented
-        our next-gen analytics platform, including data streams and data
-        warehouse, to ensure we could deliver reliable and accurate insights
-        to our customers quicker than we ever could before.
+        I designed and implemented our next-gen analytics platform, including 
+        data streams and data warehouse, to ensure we could deliver reliable 
+        and accurate insights to our customers quicker than we ever could before.
         
         Accomplishments:
         - Made key technical decisions that shaped the company's microservice
@@ -126,18 +123,13 @@ experiences:
       time: 2012 - 2015
       company: DealerSocket, Irving, TX
       details: |
-        This was my first experience working on an enterprise application, so I
-        soaked in all the knowledge I could from my peers. Many tools I began
-        using for the first time including Linux, SSH, Agile, Perl, MongoDB, and
-        more. 
-        
-        One of the things I loved most about the role was the immense room I
-        found for improvement in the product. I would refactor huge sections of
-        core code. But, I also broke things while doing this, which is where 
-        I learned probably the most important skill of my entire career: testing.
-        As I became obsessed with this new skill of mine, I reworked our unit
-        testing platform to separate unit and integration tests, allowing developers
-        to have an actual test suite they could run on their machines.
+        I worked on the eCarList application as it was being acquired by a bigger
+        company (DealerTrack) and was experiencing many growing pains. This meant
+        the system was ripe for improvement, so I would take on a number of personal
+        projects to improve the state of the codebase and stability of the system.
+        One of the most notable projects I worked was the rework of the testing
+        platform, which I stabilized (allowing it to run on personal machines) and
+        optimized (from 10 mins down to 10s to execute).
         
         Accomplishments:
         - Overhauled product-wide testing platform
