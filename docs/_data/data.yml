@@ -42,8 +42,16 @@ education:
       time: 2006 - 2010
 
 experiences:
+    - role: Staff Software Engineer, Storage
+      time: 2022 - Present
+      company: Twilio Segment, San Francisco, CA
+      details: |
+        I am on the storage team which is responsible for part of the processing
+        component of the ingestion pipeline that processes up to 1 billion events
+        per second.
+
     - role: Enterprise Architect
-      time: 2020 - Present
+      time: 2020 - 2022
       company: Solera, Westlake, TX (Aquired DealerSocket)
       details: |
         My role as enterprise architect involved understanding the issues
@@ -63,7 +71,7 @@ experiences:
         - Created service initiative process
         - Hardened and evangelized multiple microservices for reuse within the company
     - role: Application Architect
-      time: 2018 - Current
+      time: 2018 - 2022
       company: DealerSocket, Irving, TX
       details: |
         As the application architect for the Inventory+ platform, it was my duty
