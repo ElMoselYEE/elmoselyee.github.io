@@ -3,7 +3,7 @@ url: 'https://elmoselyee.github.io'
 description: Blayne's professional work history
 theme_skin: green # blue turquoise green berry orange ceramic
 chrome_mobile_color: #use hex colors (ex:#1976d2) or leave empty if you don't want a color for chrome mobile searchbar
-analytics: G-NM70KNVJ5W
+analytics: nHi3HYa1xTXfjTYlMSGjXkDjVvfLv2Rw
 sass:
   sass_dir: _sass
   style: compressed # http://sass-lang.com/documentation/file.SASS_REFERENCE.html#output_style
