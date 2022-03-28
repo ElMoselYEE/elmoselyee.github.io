@@ -49,6 +49,8 @@ experiences:
         I am on the storage team which is responsible for part of the processing
         component of the ingestion pipeline that processes up to 1 billion events
         per second.
+        
+        <i>Go, DynamoDB, Kafka</i>
 
     - role: Enterprise Architect
       time: 2020 - 2022
