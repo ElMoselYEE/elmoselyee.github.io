@@ -42,9 +42,9 @@ education:
       time: 2006 - 2010
 
 experiences:
-    - role: Staff Software Engineer, Storage
+    - role: Staff Software Engineer
       time: 2022 - Present
-      company: Twilio Segment, San Francisco, CA
+      company: Twilio Segment, San Francisco
       details: |
         I am on the storage team which is responsible for part of the processing
         component of the ingestion pipeline that processes up to 1 billion events
