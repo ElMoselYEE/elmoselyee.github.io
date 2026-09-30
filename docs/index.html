@@ -1,16 +1,898 @@
----
-layout: default
----
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Blayne Moseley, Principal Software Engineer at Twilio. Backend engineer and architect: agentic memory, high-volume data pipelines, microservice platforms.">
+<meta name="theme-color" content="#0c0e12">
+<meta property="og:title" content="Blayne Moseley">
+<meta property="og:description" content="Blayne Moseley, Principal Software Engineer at Twilio. Backend engineer and architect: agentic memory, high-volume data pipelines, microservice platforms.">
+<meta property="og:url" content="https://www.blaynemoseley.com/">
+<meta property="og:type" content="profile">
+<link rel="icon" href="favicon.ico">
+<title>Blayne Moseley</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+/* Layout: an editor shell. Activity rail, explorer, tabbed editor, optional agent panel, status bar. One dark theme, by choice. */
+:root {
+  --chrome: #0c0e12;
+  --side: #111318;
+  --editor: #15171c;
+  --line: #23272f;
+  --hover: #1b1e25;
+  --select: #252a34;
+  --fg: #d7dae0;
+  --muted: #8a92a0;
+  --faint: #555c6a;
+  --accent: #e9a95f;
+  --accent-soft: rgba(233, 169, 95, .14);
+  --kw: #e58aa3;
+  --str: #a8cc8c;
+  --num: #e9a95f;
+  --type: #78c2d6;
+  --attr: #9fb0f4;
+  --com: #5f6777;
+  --meta: #c6a0f0;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --lh: 20px;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--chrome); color: var(--fg); font: 13px/1.5 var(--sans); overflow: hidden; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: var(--type); }
+:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+.app { display: grid; grid-template-rows: 38px minmax(0, 1fr) 24px; height: 100%; }
+
+/* Title bar */
+.titlebar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--chrome); }
+.tb-left, .tb-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tb-right { justify-content: flex-end; }
+.project { font: 500 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.project b { color: var(--fg); font-weight: 500; }
+.search-btn { display: flex; align-items: center; gap: 10px; width: min(420px, 42vw); height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--side); color: var(--muted); font-size: 12px; }
+.search-btn:hover { border-color: var(--faint); color: var(--fg); }
+.search-btn kbd { margin-left: auto; font: 11px var(--mono); color: var(--faint); }
+.tb-btn { height: 26px; padding: 0 10px; border-radius: 6px; font: 500 12px var(--mono); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.tb-btn:hover { background: var(--hover); color: var(--fg); }
+.tb-btn[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+.menu-btn { display: none; }
+
+/* Main area */
+.main { display: grid; grid-template-columns: 48px 248px minmax(0, 1fr); min-height: 0; }
+.rail { background: var(--chrome); border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding-top: 6px; gap: 2px; }
+.rail button { width: 48px; height: 44px; display: grid; place-items: center; color: var(--faint); border-left: 2px solid transparent; }
+.rail button:hover { color: var(--fg); }
+.rail button[aria-pressed="true"] { color: var(--fg); border-left-color: var(--accent); }
+.rail svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.sidebar { background: var(--side); border-right: 1px solid var(--line); overflow: auto; min-width: 0; }
+.side-head { height: 34px; display: flex; align-items: center; padding: 0 16px; font: 600 11px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tree { list-style: none; margin: 0; padding: 0 0 12px; }
+.tree ul { list-style: none; margin: 0; padding: 0; }
+.row { width: 100%; display: flex; align-items: center; gap: 7px; height: 24px; padding: 0 10px; font-size: 13px; color: var(--muted); text-align: left; white-space: nowrap; }
+.row:hover { background: var(--hover); color: var(--fg); }
+.row.active { background: var(--select); color: var(--fg); }
+.row .chev { width: 12px; font-size: 10px; color: var(--faint); transition: transform .15s; }
+.row[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+.tree ul .row { padding-left: 28px; }
+.fi { font: 600 9.5px var(--mono); width: 22px; text-align: center; flex: none; }
+.fname { overflow: hidden; text-overflow: ellipsis; }
+
+.commits { list-style: none; margin: 0; padding: 0 0 12px; }
+.commit { width: 100%; text-align: left; padding: 8px 16px; display: grid; gap: 2px; border-left: 2px solid transparent; }
+.commit:hover { background: var(--hover); }
+.commit .msg { color: var(--fg); font-size: 13px; line-height: 1.35; }
+.commit .sub { font: 11px var(--mono); color: var(--faint); }
+.commit .sub em { font-style: normal; color: var(--accent); }
+.graph { position: relative; padding-left: 16px; }
+.graph::before { content: ""; position: absolute; left: 21px; top: 18px; bottom: 26px; width: 1px; background: var(--line); }
+.graph .commit { padding-left: 22px; position: relative; }
+.graph .commit::before { content: ""; position: absolute; left: 1px; top: 13px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--faint); background: var(--side); }
+.graph .commit:first-child::before { border-color: var(--accent); }
+
+/* Workbench */
+.work { display: grid; grid-template-rows: 36px 26px minmax(0, 1fr) auto; min-width: 0; min-height: 0; background: var(--editor); }
+.tabs { display: flex; background: var(--chrome); overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { display: flex; align-items: center; gap: 7px; padding: 0 8px 0 12px; height: 36px; border-right: 1px solid var(--line); color: var(--muted); font-size: 12.5px; white-space: nowrap; cursor: pointer; border-top: 1px solid transparent; }
+.tab:hover { color: var(--fg); }
+.tab.active { background: var(--editor); color: var(--fg); border-top-color: var(--accent); margin-bottom: -1px; }
+.tab .x { width: 20px; height: 20px; border-radius: 4px; display: grid; place-items: center; color: var(--faint); font-size: 14px; line-height: 1; visibility: hidden; }
+.tab.active .x, .tab:hover .x { visibility: visible; }
+.tab .x:hover { background: var(--hover); color: var(--fg); }
+.crumbs { display: flex; align-items: center; gap: 6px; padding: 0 16px; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; }
+.crumbs span:last-child { color: var(--muted); }
+
+.editor { overflow: auto; position: relative; min-height: 0; }
+.code { display: grid; grid-template-columns: auto auto; justify-content: start; font: 13px/var(--lh) var(--mono); padding: 8px 0 48px; position: relative; min-width: max-content; }
+.gutter { padding: 0 18px 0 20px; text-align: right; color: var(--faint); user-select: none; white-space: pre; }
+.code pre { margin: 0; padding-right: 32px; font: inherit; white-space: pre; position: relative; z-index: 1; }
+.hl { position: absolute; left: 0; right: 0; height: var(--lh); background: var(--accent-soft); border-left: 2px solid var(--accent); animation: fade 2.6s ease-out forwards; }
+@keyframes fade { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in.hljs-keyword { color: var(--kw); }
+.hljs-string, .hljs-regexp { color: var(--str); }
+.hljs-number, .hljs-literal { color: var(--num); }
+.hljs-title, .hljs-title.class_, .hljs-title.function_, .hljs-type, .hljs-section { color: var(--type); }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-symbol, .hljs-variable, .hljs-template-variable { color: var(--attr); }
+.hljs-built_in { color: var(--type); }
+.hljs-comment, .hljs-quote { color: var(--com); font-style: italic; }
+.hljs-meta, .hljs-doctag { color: var(--meta); }
+.hljs-bullet { color: var(--accent); }
+.code a { color: inherit; text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; }
+.code a:hover { text-decoration-color: currentColor; }
+
+/* Markdown preview */
+.preview { max-width: 76ch; padding: 36px clamp(16px, 5vw, 64px) 64px; font-size: 15px; line-height: 1.65; color: var(--fg); }
+.preview h1 { font: 600 clamp(30px, 5vw, 44px)/1.05 var(--mono); letter-spacing: -.03em; margin: 0 0 18px; text-wrap: balance; }
+.preview h1::before { content: "# "; color: var(--faint); font-weight: 400; }
+.preview h2 { font: 600 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 40px 0 12px; }
+.preview h2::before { content: "## "; color: var(--faint); }
+.preview p { margin: 0 0 14px; }
+.preview ul { margin: 0 0 14px; padding-left: 0; list-style: none; display: grid; gap: 8px; }
+.preview li { position: relative; padding-left: 20px; }
+.preview li::before { content: "-"; position: absolute; left: 2px; color: var(--accent); font-family: var(--mono); }
+.preview strong { color: #fff; font-weight: 600; }
+.preview code { font: 13px var(--mono); background: var(--select); padding: 1px 6px; border-radius: 4px; color: var(--attr); }
+.preview .lead { font-size: 18px; color: var(--muted); }
+.preview .lead strong { color: var(--fg); }
+.preview button.link { color: var(--type); text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+
+.welcome { height: 100%; display: grid; place-content: center; gap: 12px; color: var(--faint); font: 13px var(--mono); text-align: center; padding: 16px; }
+.welcome b { color: var(--muted); font-weight: 500; }
+
+/* Agent panel */
+.agent { border-top: 1px solid var(--line); background: var(--chrome); display: grid; grid-template-rows: 32px minmax(0, 1fr) auto; height: clamp(220px, 38vh, 380px); min-height: 0; }
+.agent.collapsed { height: 32px; grid-template-rows: 32px; }
+.agent.collapsed .agent-log, .agent.collapsed .agent-foot { display: none; }
+.agent-head { display: flex; align-items: center; gap: 16px; padding: 0 12px 0 16px; font: 600 11px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.agent-head .tabname { color: var(--fg); border-bottom: 1px solid var(--accent); padding-bottom: 3px; }
+.agent-head .spacer { flex: 1; }
+.agent-head button { width: 24px; height: 24px; border-radius: 4px; color: var(--muted); display: grid; place-items: center; }
+.agent-head button:hover { background: var(--hover); color: var(--fg); }
+.agent-log { overflow: auto; padding: 8px 16px 12px; font: 13px/1.6 var(--mono); }
+.banner { border: 1px solid var(--accent); border-radius: 8px; padding: 10px 14px; margin: 4px 0 14px; max-width: 560px; color: var(--muted); }
+.banner b { color: var(--accent); font-weight: 600; }
+.banner .star { color: var(--accent); }
+.msg-user { margin: 14px 0 8px; color: var(--fg); background: var(--side); padding: 4px 10px; border-radius: 4px; display: inline-block; max-width: 100%; }
+.msg-user::before { content: "> "; color: var(--faint); }
+.step { margin: 6px 0; }
+.step .dot { color: var(--accent); }
+.step.running .dot { animation: blink .8s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.step .tool { color: var(--fg); font-weight: 600; }
+.step .arg { color: var(--muted); }
+.step .res { color: var(--faint); padding-left: 18px; white-space: pre-wrap; }
+.step .res .hit { color: var(--muted); }
+.step .res .hit b { color: var(--type); font-weight: 400; }
+.answer { margin: 8px 0 4px; display: grid; grid-template-columns: 18px minmax(0, 1fr); max-width: 86ch; }
+.answer .dot { color: var(--fg); }
+.answer p { margin: 0 0 8px; }
+.answer ul { margin: 0 0 8px; padding: 0; list-style: none; }
+.answer li { padding-left: 16px; position: relative; }
+.answer li::before { content: "-"; position: absolute; left: 0; color: var(--faint); }
+.answer strong { color: #fff; font-weight: 600; }
+.answer code { color: var(--attr); }
+.answer a { color: var(--type); }
+.agent-foot { padding: 8px 16px 10px; display: grid; gap: 8px; border-top: 1px solid var(--line); }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; font: 12px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+.chip:hover:not(:disabled) { color: var(--fg); border-color: var(--faint); }
+.chip:disabled { opacity: .4; cursor: default; }
+.prompt { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; background: var(--side); }
+.prompt:focus-within { border-color: var(--faint); }
+.prompt span { color: var(--accent); font: 600 13px var(--mono); }
+.prompt input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--fg); font: 13px var(--mono); }
+.prompt input::placeholder { color: var(--faint); }
+
+/* Status bar */
+.status { display: flex; align-items: center; gap: 14px; padding: 0 12px; background: var(--side); border-top: 1px solid var(--line); font: 11.5px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; }
+.status .spacer { flex: 1; }
+.status .branch { color: var(--accent); }
+
+/* Command palette */
+.palette-wrap { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; z-index: 20; }
+.palette { width: min(560px, 100%); background: var(--side); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 18px 48px rgba(0, 0, 0, .5); overflow: hidden; }
+.palette input { width: 100%; background: var(--editor); border: 0; border-bottom: 1px solid var(--line); padding: 12px 14px; color: var(--fg); font: 14px var(--mono); outline: 0; }
+.palette ul { list-style: none; margin: 0; padding: 6px 0; max-height: 320px; overflow: auto; }
+.palette li { display: flex; align-items: center; gap: 8px; padding: 6px 14px; cursor: pointer; color: var(--muted); }
+.palette li .dir { color: var(--faint); font-size: 12px; margin-left: 4px; }
+.palette li.sel { background: var(--select); color: var(--fg); }
+
+/* Phones: explorer becomes a drawer */
+@media (max-width: 760px) {
+  .main { grid-template-columns: 44px minmax(0, 1fr); position: relative; }
+  .rail button { width: 44px; }
+  .sidebar { position: absolute; left: 44px; top: 0; bottom: 0; width: min(280px, 78vw); z-index: 10; box-shadow: 12px 0 32px rgba(0, 0, 0, .45); }
+  .sidebar[data-open="false"] { display: none; }
+  .project { display: none; }
+  .search-btn { width: 100%; }
+  .titlebar { grid-template-columns: auto 1fr auto; }
+  .search-btn kbd { display: none; }
+  .status .opt { display: none; }
+  .agent { height: 52vh; }
+}
+@media (min-width: 761px) {
+  .sidebar[data-open="false"] { display: none; }
+  .main:has(.sidebar[data-open="false"]) { grid-template-columns: 48px minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0s !important; transition: none !important; }
+}
+</style>
+<style>
+:root { padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+</style>
+<script>
+    !function(){var analytics=window.analytics=window.analytics||[];if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Segment snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.src="https://cdn.segment.com/analytics.js/v1/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._loadOptions=e};analytics._writeKey="nHi3HYa1xTXfjTYlMSGjXkDjVvfLv2Rw";;analytics.SNIPPET_VERSION="4.15.3";
+        analytics.load("nHi3HYa1xTXfjTYlMSGjXkDjVvfLv2Rw");
+        analytics.page();
+    }}();
+</script>
+</head>
+<body>
+<div class="app">
+  <header class="titlebar">
+    <div class="tb-left">
+      <span class="project"><b>blayne-moseley</b> · main</span>
+    </div>
+    <button class="search-btn" id="openPalette" aria-label="Search files">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <span>Search files</span><kbd>⌘P</kbd>
+    </button>
+    <div class="tb-right">
+      <button class="tb-btn agent-only" id="agentToggle" aria-pressed="true"><span>✻</span> Agent</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <nav class="rail" aria-label="Views">
+      <button id="viewFiles" aria-pressed="true" title="Explorer" aria-label="Explorer">
+        <svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+      </button>
+      <button id="viewGit" aria-pressed="false" title="Career history" aria-label="Career history">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 8.5v7"/><path d="M18 10.5c0 4-5 4-11 6"/></svg>
+      </button>
+      <button id="railSearch" aria-pressed="false" title="Search files" aria-label="Search files">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+      <button class="agent-only" id="railAgent" aria-pressed="true" title="Agent" aria-label="Agent">
+        <svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>
+      </button>
+    </nav>
+
+    <aside class="sidebar" id="sidebar" data-open="true">
+      <div id="sideFiles">
+        <div class="side-head">Explorer</div>
+        <ul class="tree" id="tree"></ul>
+      </div>
+      <div id="sideGit" hidden>
+        <div class="side-head">Career · git log</div>
+        <ul class="commits graph" id="commits"></ul>
+      </div>
+    </aside>
+
+    <section class="work">
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="editor" id="editor"></div>
+      <div class="agent agent-only" id="agent">
+        <div class="agent-head">
+          <span class="tabname">Agent</span><span>Terminal</span><span>Output</span>
+          <span class="spacer"></span>
+          <button id="agentCollapse" aria-label="Collapse panel" title="Collapse">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+        <div class="agent-log" id="log" aria-live="polite"></div>
+        <div class="agent-foot">
+          <div class="chips" id="chips"></div>
+          <form class="prompt" id="promptForm">
+            <span>&gt;</span>
+            <input id="promptInput" autocomplete="off" placeholder="Ask about Blayne's work…" aria-label="Ask the agent">
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="status">
+    <span class="branch">⎇ main</span>
+    <span class="opt">Principal Software Engineer · Twilio</span>
+    <span class="spacer"></span>
+    <span id="stLang">Markdown</span>
+    <span class="opt">UTF-8</span>
+    <span class="opt" id="stLines"></span>
+    <span class="agent-only" style="color:var(--accent)">✻ agent ready</span>
+  </footer>
+</div>
+
+<div class="palette-wrap" id="paletteWrap" hidden>
+  <div class="palette" role="dialog" aria-label="Go to file">
+    <input id="paletteInput" placeholder="Go to file…" autocomplete="off" aria-label="File name">
+    <ul id="paletteList"></ul>
+  </div>
+</div>
+
+<script>
+const AGENT = false;
+
+const FILES = {
+"README.md": { lang: "markdown", src:
+`# Blayne Moseley
+
+**Principal Software Engineer at Twilio,** working on agentic memory. Backend engineer and architect: I build high-volume data pipelines, microservice platforms, and the standards that help teams run them well.
+
+- **Now:** leading the agentic memory team at Twilio, building a stable product on top of unstable LLM providers
+- **Before that:** storage team at Twilio Segment, inside an ingestion pipeline that handles up to 1 billion events per second
+- **Earlier:** ten years at DealerSocket and Solera, growing from senior engineer to enterprise architect
+- **Languages, in order:** PHP → Perl → Java → Python → Go
+
+## My story
+
+Hi, I'm Blayne. I got into programming by accident at 14, trying to make my Amazon Associates referral site more dynamic. After a few nights with the PHP manual I looked back and realized this was programming. I've been hooked ever since.
+
+Through high school and college I freelanced, designed, and built e-commerce sites. Along the way I found the work I love most: building APIs and designing systems.
+
+## In this repo
+
+- \`experience/\` has one file per role, written in the language I used most in that job. The enterprise architect years are YAML, which felt right.
+- \`skills.json\` is the short version of my stack.
+- \`contact.sh\` has how to reach me.
+
+## Education
+
+University of Texas at Dallas, 2006–2010` },
+
+"experience/2024-twilio-agentic-memory.go": { lang: "go", src:
+`// Twilio · Agentic Memory
+// Principal Software Engineer · 2024 – present
+//
+// Same company as Segment, new business unit and role.
+
+package experience
+
+var AgenticMemory = Role{
+	Title:   "Principal Software Engineer",
+	Company: "Twilio",
+	Focus:   "Agentic memory",
+	Start:   2024,
+	End:     Present,
+
+	Highlights: []string{
+		"Lead the team building agentic memory",
+		"Built a load testing framework now used on half a dozen projects",
+		"Built a stable product on top of unstable LLM providers",
+	},
+
+	Stack: []string{"Go"},
+}` },
+
+"experience/2022-segment.go": { lang: "go", src:
+`// Twilio Segment · San Francisco
+// Staff Software Engineer · 2022 – 2024
+
+package experience
+
+var Segment = Role{
+	Title:   "Staff Software Engineer",
+	Company: "Twilio Segment",
+	Team:    "Storage",
+	Start:   2022,
+	End:     2024,
+
+	// Part of the processing layer in the ingestion pipeline.
+	Summary: "Storage team: processing for a pipeline that " +
+		"handles up to 1 billion events per second.",
+
+	Stack: []string{"Go", "DynamoDB", "Kafka"},
+}` },
+
+"experience/2020-solera.yaml": { lang: "yaml", src:
+`# Solera · Westlake, TX (acquired DealerSocket)
+role: Enterprise Architect
+company: Solera
+years: 2020–2022
+
+summary: >
+  Worked across engineering teams in the enterprise to find what
+  slowed them down, then set shared standards so they moved faster.
+  Designed architectures and execution plans for key company
+  initiatives, including search infrastructure and SSO.
+
+accomplishments:
+  - Created production-readiness standards for microservices
+  - Created the service initiative process
+  - Hardened and promoted microservices for reuse across the company,
+    saving engineers hundreds of hours of duplicate work` },
+
+"experience/2018-dealersocket-architect.py": { lang: "python", src:
+`"""DealerSocket · Irving, TX
+Application Architect, Inventory+ platform · 2018–2022
+"""
+from dataclasses import dataclass
 
 
-{% include career-profile.html %}
+@dataclass
+class ApplicationArchitect:
+    company: str = "DealerSocket"
+    platform: str = "Inventory+"
+    years: tuple = (2018, 2022)
 
-{% unless site.data.data.sidebar.education %}
-  {% include education.html %}
-{% endunless %}
+    def responsibilities(self):
+        yield "Decompose new requirements and define the technical runway"
+        yield "Scope epics and refine them with the engineering teams"
+        yield "Build proofs of concept to remove uncertainty"
 
-{% include experiences.html %}
+    def accomplishments(self):
+        return [
+            "Took the platform to more than a dozen microservices",
+            "Set architecture patterns for every new service",
+            "Rebuilt photo serving: -15% total platform infra cost",
+            "Sustained 12+ successful deploys a month across 3 teams",
+            "Aligned 7 teams with regular tech sessions",
+        ]
 
-{% include projects.html %}
+    stack = ["AWS Lambda", "Python", "Flask", "ECS", "Docker",
+             "Java", "Spring Boot", "MySQL", "PostgreSQL", "Kafka",
+             "Elasticsearch", "Glue", "Spark", "Redshift"]` },
 
-{% include skills.html %}
+"experience/2015-dealersocket-principal.java": { lang: "java", src:
+`/**
+ * DealerSocket · Irving, TX
+ * Principal Software Engineer · 2015–2018
+ */
+public final class PrincipalEngineer extends Engineer {
+
+    // Picked for tiger teams: the microservice stack, monitoring,
+    // and data analysis for our largest clients.
+
+    @Override
+    public List<String> accomplishments() {
+        return List.of(
+            "Made key calls that shaped the company's microservice framework",
+            "Built the monitoring stack: metrics, alarms, integrations",
+            "Designed the next-gen analytics platform: streams + warehouse",
+            "Mentored engineers on and off my teams; gave internal tech talks"
+        );
+    }
+
+    static final String[] STACK = {
+        "Redshift", "Spark", "Kafka", "Grafana", "InfluxDB", "Kapacitor",
+        "ECS", "Docker", "Java", "Spring Boot", "Perl", "MongoDB"
+    };
+}` },
+
+"experience/2012-dealersocket-senior.pl": { lang: "perl", src:
+`#!/usr/bin/perl
+# DealerSocket (eCarList) · Irving, TX
+# Senior Software Engineer · 2012–2015
+use strict;
+use warnings;
+
+# eCarList was mid-acquisition and had growing pains, so I took on
+# side projects to stabilize the system and clean up the codebase.
+
+my %role = (
+    title => 'Senior Software Engineer',
+    years => [2012, 2015],
+    wins  => [
+        'Rebuilt the test platform: runs locally, 10 min -> 10 s',
+        'Profiled hot paths: ~2x faster across core parts of the app',
+    ],
+    stack => [qw(Perl Linux MySQL MongoDB)],
+);
+
+print "$_\\n" for @{ $role{wins} };` },
+
+"experience/2010-ameriflex.php": { lang: "php", src:
+`<?php
+// AmeriFlex · Frisco, TX
+// Software Engineer · 2010–2012
+
+$role = [
+    'title'   => 'Software Engineer',
+    'summary' => 'Built a third-party benefits administration app '
+               . 'managing nearly $20M in FSA and HSA balances.',
+    'wins'    => [
+        'Made core data ingestion 4x faster with multithreading',
+    ],
+    'stack'   => ['PHP', 'MySQL'],
+];` },
+
+"skills.json": { lang: "json", src:
+`{
+  "languages": ["Go", "Python", "Java", "Perl", "PHP", "SQL"],
+  "data": ["Kafka", "DynamoDB", "Redshift", "Spark", "Elasticsearch",
+           "PostgreSQL", "MySQL", "MongoDB"],
+  "cloud": ["AWS Lambda", "ECS", "Glue", "Docker", "serverless"],
+  "practice": ["microservice design", "DevOps", "observability",
+               "production readiness"],
+  "people": ["driving roadmap initiatives", "team alignment",
+             "mentoring"]
+}` },
+
+"contact.sh": { lang: "bash", src:
+`#!/usr/bin/env bash
+# Say hello.
+
+EMAIL="bmoseley@gmail.com"
+LINKEDIN="https://www.linkedin.com/in/blaynemoseley"
+GITHUB="https://github.com/elmoselyee"
+RESUME_PDF="https://bmoseley-public.s3.amazonaws.com/blayne_moseley_resume.pdf"` },
+};
+
+const COMMITS = [
+  { hash: "f02b7c9", year: "2024", msg: "Move to agentic memory as Principal Software Engineer", file: "experience/2024-twilio-agentic-memory.go", tag: "HEAD" },
+  { hash: "d4c8e16", year: "2022", msg: "Join Twilio Segment as Staff Software Engineer", file: "experience/2022-segment.go" },
+  { hash: "71ab3f9", year: "2020", msg: "Merge DealerSocket into Solera; become Enterprise Architect", file: "experience/2020-solera.yaml" },
+  { hash: "e27d410", year: "2018", msg: "Promote to Application Architect, Inventory+", file: "experience/2018-dealersocket-architect.py" },
+  { hash: "9c0e5aa", year: "2015", msg: "Promote to Principal Software Engineer", file: "experience/2015-dealersocket-principal.java" },
+  { hash: "4be91d7", year: "2012", msg: "Join DealerSocket (eCarList) as Senior Engineer", file: "experience/2012-dealersocket-senior.pl" },
+  { hash: "a1f3c02", year: "2010", msg: "Initial commit: Software Engineer at AmeriFlex", file: "experience/2010-ameriflex.php" },
+];
+
+const ICONS = {
+  md: ["M↓", "var(--attr)"], go: ["go", "var(--type)"], yaml: ["yml", "var(--kw)"], py: ["py", "var(--num)"],
+  java: ["jv", "var(--kw)"], pl: ["pl", "var(--meta)"], php: ["php", "var(--attr)"], json: ["{}", "var(--num)"], sh: ["$_", "var(--str)"],
+};
+const LANG_NAMES = { markdown: "Markdown", go: "Go", yaml: "YAML", python: "Python", java: "Java", perl: "Perl", php: "PHP", json: "JSON", bash: "Shell Script" };
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const base = (p) => p.split("/").pop();
+const ext = (p) => p.split(".").pop();
+const icon = (p) => { const [t, c] = ICONS[ext(p)] || ["·", "var(--muted)"]; return `<span class="fi" style="color:${c}">${t}</span>`; };
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const narrow = () => matchMedia("(max-width: 760px)").matches;
+
+if (!AGENT) document.querySelectorAll(".agent-only").forEach((el) => el.remove());
+
+/* ---------- tiny markdown ---------- */
+function inline(s) {
+  return esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+function md(src) {
+  return src.split(/\n{2,}/).map((block) => {
+    const lines = block.split("\n");
+    if (block.startsWith("# ")) return `<h1>${inline(block.slice(2))}</h1>`;
+    if (block.startsWith("## ")) return `<h2>${inline(block.slice(3))}</h2>`;
+    if (lines.every((l) => l.startsWith("- "))) return `<ul>${lines.map((l) => `<li>${inline(l.slice(2))}</li>`).join("")}</ul>`;
+    return `<p>${inline(lines.join(" "))}</p>`;
+  }).join("");
+}
+
+/* ---------- explorer ---------- */
+const open = new Set(["experience"]);
+function renderTree() {
+  const paths = Object.keys(FILES);
+  const dirs = {};
+  const top = [];
+  paths.forEach((p) => {
+    const parts = p.split("/");
+    if (parts.length > 1) (dirs[parts[0]] ||= []).push(p); else top.push(p);
+  });
+  let html = "";
+  Object.keys(dirs).forEach((d) => {
+    const exp = open.has(d);
+    html += `<li><button class="row" data-dir="${d}" aria-expanded="${exp}"><span class="chev">▾</span>${d}</button>`;
+    if (exp) html += `<ul>${dirs[d].map(fileRow).join("")}</ul>`;
+    html += `</li>`;
+  });
+  top.sort((a, b) => (a === "README.md" ? -1 : b === "README.md" ? 1 : a.localeCompare(b)));
+  html += top.map(fileRow).join("");
+  $("#tree").innerHTML = html;
+}
+function fileRow(p) {
+  const pad = p.includes("/") ? "" : '<span class="chev"></span>';
+  return `<li><button class="row${p === active ? " active" : ""}" data-file="${p}">${pad}${icon(p)}<span class="fname">${base(p)}</span></button></li>`;
+}
+$("#tree").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.dir) { open.has(b.dataset.dir) ? open.delete(b.dataset.dir) : open.add(b.dataset.dir); renderTree(); }
+  if (b.dataset.file) { openFile(b.dataset.file); if (narrow()) setSidebar(false); }
+});
+
+function renderCommits() {
+  $("#commits").innerHTML = COMMITS.map((c) =>
+    `<li><button class="commit" data-file="${c.file}"><span class="msg">${esc(c.msg)}</span><span class="sub">${c.hash} · ${c.year}${c.tag ? ` · <em>${c.tag}</em>` : ""}</span></button></li>`).join("");
+}
+$("#commits").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-file]");
+  if (b) { openFile(b.dataset.file); if (narrow()) setSidebar(false); }
+});
+
+/* ---------- sidebar views ---------- */
+let view = "files";
+function setSidebar(isOpen) { $("#sidebar").dataset.open = String(isOpen); syncRail(); }
+function syncRail() {
+  const isOpen = $("#sidebar").dataset.open === "true";
+  $("#viewFiles").setAttribute("aria-pressed", String(isOpen && view === "files"));
+  $("#viewGit").setAttribute("aria-pressed", String(isOpen && view === "git"));
+  $("#sideFiles").hidden = view !== "files";
+  $("#sideGit").hidden = view !== "git";
+}
+function toggleView(v) {
+  const isOpen = $("#sidebar").dataset.open === "true";
+  if (isOpen && view === v) setSidebar(false);
+  else { view = v; setSidebar(true); }
+}
+$("#viewFiles").onclick = () => toggleView("files");
+$("#viewGit").onclick = () => toggleView("git");
+$("#railSearch").onclick = () => showPalette();
+
+/* ---------- tabs + editor ---------- */
+let tabs = [];
+let active = null;
+function openFile(p, lines) {
+  if (!FILES[p]) return;
+  if (!tabs.includes(p)) tabs.push(p);
+  active = p;
+  renderTabs(); renderEditor(); renderTree();
+  if (lines && lines.length) flash(lines);
+}
+function closeTab(p) {
+  const i = tabs.indexOf(p);
+  tabs.splice(i, 1);
+  if (active === p) active = tabs[Math.min(i, tabs.length - 1)] || null;
+  renderTabs(); renderEditor(); renderTree();
+}
+function renderTabs() {
+  $("#tabs").innerHTML = tabs.map((p) => {
+    const label = p === "README.md" ? "Preview README.md" : base(p);
+    return `<div class="tab${p === active ? " active" : ""}" role="tab" aria-selected="${p === active}" tabindex="0" data-file="${p}">${icon(p)}<span>${label}</span><button class="x" data-close="${p}" aria-label="Close ${base(p)}">×</button></div>`;
+  }).join("");
+}
+$("#tabs").addEventListener("click", (e) => {
+  const x = e.target.closest("[data-close]");
+  if (x) { e.stopPropagation(); closeTab(x.dataset.close); return; }
+  const t = e.target.closest(".tab");
+  if (t) openFile(t.dataset.file);
+});
+$("#tabs").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.dataset.file) openFile(e.target.dataset.file); });
+
+function highlight(f) {
+  let html;
+  try { html = window.hljs ? hljs.highlight(f.src, { language: f.lang }).value : esc(f.src); }
+  catch { html = esc(f.src); }
+  return html.replace(/(https:\/\/[^"&<\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+}
+function renderEditor() {
+  const ed = $("#editor");
+  if (!active) {
+    $("#crumbs").innerHTML = "";
+    ed.innerHTML = `<div class="welcome"><b>blayne-moseley</b><span>⌘P  go to file</span>${AGENT ? "<span>✻  ask the agent below</span>" : ""}</div>`;
+    $("#stLang").textContent = ""; $("#stLines").textContent = "";
+    return;
+  }
+  const f = FILES[active];
+  $("#crumbs").innerHTML = ["blayne-moseley", ...active.split("/")].map((s) => `<span>${esc(s)}</span>`).join('<span>›</span>');
+  const n = f.src.split("\n").length;
+  $("#stLang").textContent = LANG_NAMES[f.lang];
+  $("#stLines").textContent = `${n} lines`;
+  if (active === "README.md") {
+    let html = md(f.src).replace("<p>", '<p class="lead">');
+    const tip = AGENT
+      ? `<p>Open any file from the explorer, press <code>⌘P</code>, or <button class="link" data-ask="career">ask the agent</button> below.</p>`
+      : `<p>Open any file from the explorer, or press <code>⌘P</code> to jump to one.</p>`;
+    html = html.replace("<h2>Education</h2>", tip + "<h2>Education</h2>");
+    ed.innerHTML = `<article class="preview">${html}</article>`;
+  } else {
+    const nums = Array.from({ length: n }, (_, i) => i + 1).join("\n");
+    ed.innerHTML = `<div class="code" id="code"><div class="gutter">${nums}</div><pre><code>${highlight(f)}</code></pre></div>`;
+  }
+  ed.scrollTop = 0;
+}
+$("#editor").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ask]");
+  if (b && AGENT) { setAgent(true); ask(INTENTS.find((i) => i.id === b.dataset.ask)); }
+});
+function flash(lines) {
+  const code = $("#code");
+  if (!code) return;
+  lines.forEach((ln) => {
+    const d = document.createElement("div");
+    d.className = "hl";
+    d.style.top = `calc(8px + ${ln - 1} * var(--lh))`;
+    code.appendChild(d);
+    setTimeout(() => d.remove(), 2700);
+  });
+  const lh = 20;
+  const ed = $("#editor");
+  ed.scrollTo({ top: Math.max(0, (lines[0] - 3) * lh), behavior: reduced ? "auto" : "smooth" });
+}
+
+/* ---------- command palette ---------- */
+let sel = 0;
+function showPalette() {
+  $("#paletteWrap").hidden = false;
+  $("#paletteInput").value = "";
+  sel = 0; renderPalette();
+  $("#paletteInput").focus();
+}
+function hidePalette() { $("#paletteWrap").hidden = true; }
+function matches() {
+  const q = $("#paletteInput").value.toLowerCase().trim();
+  return Object.keys(FILES).filter((p) => !q || p.toLowerCase().includes(q));
+}
+function renderPalette() {
+  const m = matches();
+  sel = Math.min(sel, Math.max(0, m.length - 1));
+  $("#paletteList").innerHTML = m.length
+    ? m.map((p, i) => `<li class="${i === sel ? "sel" : ""}" data-file="${p}">${icon(p)}${base(p)}<span class="dir">${p.includes("/") ? p.split("/")[0] : ""}</span></li>`).join("")
+    : `<li>No matching files</li>`;
+}
+$("#openPalette").onclick = showPalette;
+$("#paletteInput").addEventListener("input", () => { sel = 0; renderPalette(); });
+$("#paletteInput").addEventListener("keydown", (e) => {
+  const m = matches();
+  if (e.key === "ArrowDown") { sel = Math.min(sel + 1, m.length - 1); renderPalette(); e.preventDefault(); }
+  if (e.key === "ArrowUp") { sel = Math.max(sel - 1, 0); renderPalette(); e.preventDefault(); }
+  if (e.key === "Enter" && m[sel]) { hidePalette(); openFile(m[sel]); }
+});
+$("#paletteList").addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-file]");
+  if (li) { hidePalette(); openFile(li.dataset.file); }
+});
+$("#paletteWrap").addEventListener("click", (e) => { if (e.target.id === "paletteWrap") hidePalette(); });
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "p") { e.preventDefault(); showPalette(); }
+  if (e.key === "Escape") hidePalette();
+});
+
+/* ---------- agent ---------- */
+const INTENTS = [
+  { id: "now", chip: "What is he working on now?", match: /now|current|segment|twilio|today/i,
+    steps: [{ tool: "Read", file: "experience/2024-twilio-agentic-memory.go" }],
+    answer: "Since 2024 Blayne has been a **Principal Software Engineer** at Twilio, leading the team that builds **agentic memory**. He built a load testing framework now used on half a dozen projects, and a stable product on top of unstable LLM providers. Before that he spent two years on Segment's storage team, in a pipeline that handles up to **1 billion events per second**." },
+  { id: "career", chip: "Career in 30 seconds", match: /career|summar|history|background|timeline|30|resume|who/i,
+    steps: [{ tool: "Bash", cmd: "git log --oneline --reverse" }],
+    answer: "Sixteen years, one direction: from shipping features to shaping how whole engineering orgs build.\n\n- **2010–2015:** PHP and Perl, making slow systems fast (4x ingestion, 10 min → 10 s tests)\n- **2015–2022:** principal engineer, then application architect, then enterprise architect as DealerSocket became part of Solera\n- **2022–now:** back to hands-on systems at Segment's scale\n\nClick any commit in the **Career** view on the left to open that role." },
+  { id: "arch", chip: "Has he led architecture work?", match: /architect|lead|design|standard|staff|principal/i,
+    steps: [{ tool: "Grep", pattern: /architect|standard/i, label: '"architect|standard"', dir: "experience/" }],
+    answer: "Yes, for most of the last decade.\n\n- **Enterprise Architect, Solera (2020–2022):** set production-readiness standards for microservices, created the service initiative process, and designed the search infrastructure and SSO plans.\n- **Application Architect, DealerSocket (2018–2022):** took the Inventory+ platform to more than a dozen microservices and set the patterns every new service followed.\n\nBefore that, as a principal engineer, he made the calls that shaped DealerSocket's microservice framework." },
+  { id: "wins", chip: "Biggest wins, with numbers", match: /win|impact|number|accomplish|achiev|result|metric/i,
+    steps: [{ tool: "Grep", pattern: /billion|\d+x |\d+%|\d+\+|-> |\$\d+M/, label: '"billion|\\d+x|\\d+%|->"', dir: "experience/" }],
+    answer: "- **1B events/sec** through the pipeline he works on at Segment\n- **−15% total infra cost** from rebuilding photo serving\n- **12+ deploys a month** sustained across three teams\n- **10 min → 10 s** test suite, runnable on a laptop\n- **~2x faster** core app paths from profiling\n- **4x faster** data ingestion with multithreading\n- **$20M** in FSA/HSA balances on a system he helped build" },
+  { id: "stack", chip: "What's his stack?", match: /stack|skill|language|tech|tool|kafka|python|aws/i,
+    steps: [{ tool: "Read", file: "skills.json" }],
+    answer: "**Now:** Go, DynamoDB and Kafka.\n\n**Deep history:** AWS (Lambda, ECS, Glue), Python and Flask, Java and Spring Boot, Spark and Redshift, plus the Perl and PHP he started with.\n\nHe also cares about the practice around the code: observability, DevOps and production readiness." },
+  { id: "contact", chip: "How do I reach him?", match: /contact|email|reach|hire|linkedin|github|talk|touch/i,
+    steps: [{ tool: "Read", file: "contact.sh" }],
+    answer: "Email **bmoseley@gmail.com**, or find him on [LinkedIn](https://www.linkedin.com/in/blaynemoseley) and [GitHub](https://github.com/elmoselyee)." },
+  { id: "story", chip: "How did he get started?", match: /story|start|begin|first|php|young|school|education|college|degree/i,
+    steps: [{ tool: "Read", file: "README.md" }],
+    answer: "At 14, trying to make his Amazon Associates referral site more dynamic. A few nights with the PHP manual later, he realized he was programming, and he's kept at it since.\n\nFreelancing, design work and e-commerce builds followed through high school and college (UT Dallas, 2006–2010). Building APIs and designing systems is the part that stuck." },
+];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, reduced ? 0 : ms));
+let busy = false;
+
+function logEl(html, cls) {
+  const d = document.createElement("div");
+  if (cls) d.className = cls;
+  d.innerHTML = html;
+  $("#log").appendChild(d);
+  scrollLog();
+  return d;
+}
+function scrollLog() { const l = $("#log"); l.scrollTop = l.scrollHeight; }
+
+function grep(pattern, dir) {
+  const hits = [];
+  Object.keys(FILES).filter((p) => p.startsWith(dir)).forEach((p) => {
+    FILES[p].src.split("\n").forEach((line, i) => { if (pattern.test(line)) hits.push({ p, n: i + 1, text: line.trim() }); });
+  });
+  return hits;
+}
+
+async function typeInto(el, html) {
+  el.innerHTML = html;
+  if (reduced) return;
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push([walker.currentNode, walker.currentNode.textContent]);
+  nodes.forEach(([n]) => (n.textContent = ""));
+  for (const [n, text] of nodes) {
+    for (let i = 0; i < text.length; i += 4) {
+      n.textContent = text.slice(0, i + 4);
+      if (i % 24 === 0) { scrollLog(); await new Promise((r) => setTimeout(r, 12)); }
+    }
+  }
+  scrollLog();
+}
+
+async function runStep(s) {
+  let head, res = "";
+  if (s.tool === "Read") head = `<span class="tool">Read</span><span class="arg">(${esc(s.file)})</span>`;
+  if (s.tool === "Bash") head = `<span class="tool">Bash</span><span class="arg">(${esc(s.cmd)})</span>`;
+  if (s.tool === "Grep") head = `<span class="tool">Grep</span><span class="arg">(${esc(s.label)}, ${esc(s.dir)})</span>`;
+  const el = logEl(`<span class="dot">⏺</span> ${head}`, "step running");
+  await sleep(650);
+  if (s.tool === "Read") {
+    openFile(s.file, s.file === "README.md" ? [] : [1]);
+    res = `Read ${FILES[s.file].src.split("\n").length} lines`;
+  }
+  if (s.tool === "Bash") {
+    res = [...COMMITS].reverse().map((c) => `<span class="hit"><b>${c.hash}</b> ${c.year} ${esc(c.msg)}</span>`).join("\n");
+    view = "git"; if (!narrow()) setSidebar(true);
+  }
+  if (s.tool === "Grep") {
+    const hits = grep(s.pattern, s.dir);
+    const files = [...new Set(hits.map((h) => h.p))];
+    res = `Found ${hits.length} lines in ${files.length} files\n` +
+      hits.slice(0, 6).map((h) => `<span class="hit"><b>${esc(base(h.p))}:${h.n}</b>  ${esc(h.text.slice(0, 70))}</span>`).join("\n") +
+      (hits.length > 6 ? `\n… ${hits.length - 6} more` : "");
+    if (files[0]) openFile(files[0], hits.filter((h) => h.p === files[0]).map((h) => h.n));
+  }
+  el.classList.remove("running");
+  el.insertAdjacentHTML("beforeend", `<div class="res">⎿  ${res}</div>`);
+  scrollLog();
+}
+
+async function ask(intent, text) {
+  if (busy) return;
+  busy = true; setChips(true);
+  logEl(esc(text || intent.chip), "msg-user");
+  await sleep(300);
+  if (!intent) {
+    const a = logEl(`<span class="dot">⏺</span><div></div>`, "answer");
+    await typeInto(a.lastChild, md("I'm a scripted preview, so I only know a few things for now. Try one of the suggestions below."));
+  } else {
+    for (const s of intent.steps) await runStep(s);
+    await sleep(250);
+    const a = logEl(`<span class="dot">⏺</span><div></div>`, "answer");
+    await typeInto(a.lastChild, md(intent.answer));
+  }
+  busy = false; setChips(false);
+}
+
+function setChips(disabled) { document.querySelectorAll(".chip").forEach((c) => (c.disabled = disabled)); }
+function setAgent(show) {
+  $("#agent").classList.toggle("collapsed", !show);
+  $("#agentToggle").setAttribute("aria-pressed", String(show));
+  $("#railAgent").setAttribute("aria-pressed", String(show));
+}
+
+if (AGENT) {
+  $("#chips").innerHTML = INTENTS.map((i) => `<button class="chip" data-id="${i.id}">${esc(i.chip)}</button>`).join("");
+  $("#chips").addEventListener("click", (e) => {
+    const c = e.target.closest(".chip");
+    if (c) ask(INTENTS.find((i) => i.id === c.dataset.id));
+  });
+  $("#promptForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = $("#promptInput").value.trim();
+    if (!q || busy) return;
+    $("#promptInput").value = "";
+    ask(INTENTS.find((i) => i.match.test(q)), q);
+  });
+  const toggle = () => setAgent($("#agent").classList.contains("collapsed"));
+  $("#agentToggle").onclick = toggle;
+  $("#railAgent").onclick = toggle;
+  $("#agentCollapse").onclick = () => setAgent(false);
+  logEl(`<div class="banner"><span class="star">✻</span> <b>blayne-agent</b><br>Ask about Blayne's work. Answers come from the files in this repo, and I'll open them as I go.</div>`);
+}
+
+/* ---------- boot ---------- */
+renderCommits();
+tabs = ["README.md", "experience/2024-twilio-agentic-memory.go"];
+openFile("README.md");
+if (narrow()) setSidebar(false); else syncRail();
+</script>
+</body>
+</html>

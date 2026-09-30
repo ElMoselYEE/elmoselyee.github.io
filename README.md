@@ -1,30 +1,24 @@
 # elmoselyee.github.io
 
-This is the source code for [blaynemoseley.com](blaynemoseley.com).
+This is the source code for [blaynemoseley.com](https://www.blaynemoseley.com).
 
-It uses [Jekyll](https://jekyllrb.com/) for static site generation, 
-[GitHub Actions](https://docs.github.com/en/actions) for build and 
-deploy, and [GitHub Pages](https://pages.github.com/) for serving 
-the content.
+The site is a single static page, `docs/index.html`, styled like a code editor. Each role on the resume is a file
+written in the language used most in that job. [GitHub Pages](https://pages.github.com/) serves the `docs/` folder
+from `main` as-is (`docs/.nojekyll` turns off the Jekyll build).
 
 # Usage
 
-To run locally, you first need to [install Jekyll](https://jekyllrb.com/docs/installation/).
+Open `docs/index.html` in a browser, or serve the folder:
 
-The following command will generate the assets and start
-up a simple server at http://localhost:4000
+    python3 -m http.server -d docs 4000
 
-    bundle exec jekyll serve
+The resume content lives in the `FILES` and `COMMITS` objects near the top of the page's script.
 
 # Deploy
 
-No action needed.
+Merge to `main`. GitHub Pages publishes it automatically.
 
-GitHub Pages has special integration with GitHub actions
-already, so the build and deployment will both be kicked
-off automatically when code is committed and merged into 
-mainline.
+# Paths
 
-# Contributing
-
-Submit a PR.
+- `/` is the site.
+- `/resume/download` redirects to the PDF resume.
