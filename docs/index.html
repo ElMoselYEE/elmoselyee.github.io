@@ -348,6 +348,7 @@ Through high school and college I freelanced, designed, and built e-commerce sit
 
 - \`experience/\` has one file per role, written in the language I used most in that job. The enterprise architect years are YAML, which felt right.
 - \`skills.json\` is the short version of my stack.
+- \`CLAUDE.md\` is how I work with AI agents, written for the agents.
 - \`contact.sh\` has how to reach me.
 
 ## Education
@@ -510,9 +511,71 @@ $role = [
     'stack'   => ['PHP', 'MySQL'],
 ];` },
 
+"CLAUDE.md": { lang: "markdown", src:
+`# CLAUDE.md
+
+Guidance for Claude Code, and any other agent, working with Blayne.
+
+## Overview
+
+Principal engineer who builds AI products for a living and builds with AI every day.
+At Twilio he leads the agentic memory team. At home, agents help run his homelab.
+The tools change every few months, and he changes with them.
+
+## How Blayne works with agents
+
+- Agents do real work here: plan, edit, run commands, open pull requests. He reviews
+  and merges.
+- Context lives in the repo. Every project gets a CLAUDE.md, repeated workflows
+  become skills, and lessons learned go into memory.
+- Guardrails are designed in: read-only tokens for infrastructure, secrets agents
+  never touch, and a diff preview before any config reaches production.
+- New models are measured before they're trusted. His own benchmark harness
+  (GSM8K, HumanEval-lite) decides which model gets which job.
+
+## AI stack
+
+- **Agents:** Claude Code, daily, at work and at home
+- **Routing:** Claude Code Router, picking a local or hosted model per task
+- **Local models:** Ollama on his own GPU for fast, free background work
+- **Hosted models:** Anthropic, DeepSeek, Qwen and more via OpenRouter and OpenCode Zen
+- **Integrations:** MCP servers and CLIs that give agents Home Assistant,
+  Google Workspace and personal finance data
+- **Glue:** custom request transformers that let one agent talk to many providers
+
+## At work
+
+- Leads the team building agentic memory at Twilio
+- Built a stable product on top of unstable LLM providers
+- Built a load testing framework now used on half a dozen projects
+
+## Adapting to the landscape
+
+- Tries new tools on real problems, then keeps what earns its place.
+- Rebuilds his workflow as often as the tools improve. Nothing is sacred.
+- Writes down what works (CLAUDE.md, skills, benchmarks) so each new tool
+  starts from what the last one learned.
+
+## Rules
+
+- Benchmark before switching models.
+- Never put secrets in a prompt. Tell Blayne which command to run instead.
+- Verify, then report. A reload that "succeeded" still gets its logs checked.
+- Plain-text math in the terminal. No LaTeX.
+
+## Commands
+
+\`\`\`shell
+/model ollama,gemma4:26b                          # local model, no API cost
+scripts/eval/check-models.sh                      # is every model responding?
+python3 scripts/eval/gsm8k_benchmark.py --model X  # score it before trusting it
+\`\`\`` },
+
 "skills.json": { lang: "json", src:
 `{
   "languages": ["Go", "Python", "Java", "Perl", "PHP", "SQL"],
+  "ai": ["Claude Code", "agentic memory", "MCP", "model routing",
+         "LLM evaluation", "local models (Ollama)"],
   "data": ["Kafka", "DynamoDB", "Redshift", "Spark", "Elasticsearch",
            "PostgreSQL", "MySQL", "MongoDB"],
   "cloud": ["AWS Lambda", "ECS", "Glue", "Docker", "serverless"],
