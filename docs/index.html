@@ -354,7 +354,7 @@ Through high school and college I freelanced, designed, and built e-commerce sit
 - \`skills.json\` is the short version of my stack.
 - \`CLAUDE.md\` is how I work with AI agents, written for the agents.
 - \`contact.sh\` has how to reach me.
-- \`snake.py\` is a break from reading. Eat the bugs.
+- \`games/\` is for a break from reading.
 
 ## Education
 
@@ -599,9 +599,9 @@ LINKEDIN="https://www.linkedin.com/in/blaynemoseley"
 GITHUB="https://github.com/elmoselyee"
 RESUME_PDF="https://bmoseley-public.s3.amazonaws.com/blayne_moseley_resume.pdf"` },
 
-// Opens as a game, not as code (see snake below); src only feeds the palette.
-"snake.py": { lang: "python", game: true, src:
-`"""snake.py: eat the bugs, don't hit the walls."""` },
+// games/ opens each file as a game, not as code (see GAMES below); src only feeds the palette. Collapsed by default.
+"games/snake.py": { lang: "python", game: true, src: `"""Eat the bugs. Don't hit the walls."""` },
+"games/career_highway.rs": { lang: "rust", game: true, src: `// Drive from 2010 to HEAD.` },
 };
 
 const COMMITS = [
@@ -617,8 +617,9 @@ const COMMITS = [
 const ICONS = {
   md: ["M↓", "var(--attr)"], go: ["go", "var(--type)"], yaml: ["yml", "var(--kw)"], py: ["py", "var(--num)"],
   java: ["jv", "var(--kw)"], pl: ["pl", "var(--meta)"], php: ["php", "var(--attr)"], json: ["{}", "var(--num)"], sh: ["$_", "var(--str)"],
+  rs: ["rs", "var(--num)"],
 };
-const LANG_NAMES = { markdown: "Markdown", go: "Go", yaml: "YAML", python: "Python", java: "Java", perl: "Perl", php: "PHP", json: "JSON", bash: "Shell Script" };
+const LANG_NAMES = { markdown: "Markdown", go: "Go", yaml: "YAML", python: "Python", java: "Java", perl: "Perl", php: "PHP", json: "JSON", bash: "Shell Script", rust: "Rust" };
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -669,8 +670,7 @@ function renderTree() {
   $("#tree").innerHTML = html;
 }
 function fileRow(p) {
-  const pad = p.includes("/") ? "" : '<span class="chev"></span>';
-  return `<li><button class="row${p === active ? " active" : ""}" data-file="${p}">${pad}${icon(p)}<span class="fname">${base(p)}</span></button></li>`;
+  return `<li><button class="row${p === active ? " active" : ""}" data-file="${p}">${icon(p)}<span class="fname">${base(p)}</span></button></li>`;
 }
 $("#tree").addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -745,7 +745,7 @@ function highlight(f) {
 }
 function renderEditor() {
   const ed = $("#editor");
-  snake.unmount();
+  if (playing) playing.unmount();
   if (!active) {
     $("#crumbs").innerHTML = "";
     ed.innerHTML = `<div class="welcome"><b>blayne-moseley</b><span>⌘P  go to file</span>${AGENT ? "<span>✻  ask the agent below</span>" : ""}</div>`;
@@ -765,8 +765,8 @@ function renderEditor() {
     html = html.replace("<h2>Education</h2>", tip + "<h2>Education</h2>");
     ed.innerHTML = `<article class="preview">${html}</article>`;
   } else if (f.game) {
-    ed.innerHTML = `<div class="game"><canvas aria-label="Snake game: arrow keys or WASD to steer, Space to start"></canvas></div>`;
-    snake.mount(ed.querySelector("canvas"));
+    ed.innerHTML = `<div class="game"><canvas aria-label="${base(active)}: a game. Arrow keys or WASD to play, Space to start and pause"></canvas></div>`;
+    GAMES[active].mount(ed.querySelector("canvas"));
   } else {
     const nums = Array.from({ length: n }, (_, i) => i + 1).join("\n");
     ed.innerHTML = `<div class="code" id="code"><div class="gutter">${nums}</div><pre><code>${highlight(f)}</code></pre></div>`;
@@ -830,185 +830,493 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") hidePalette();
 });
 
-/* ---------- snake.py ---------- */
-// Snake in the editor pane: eat bugs, grow, speed up. Arrows/WASD or swipes; Space or a tap starts and pauses.
-// The game survives switching tabs (it pauses); the best score stays in this browser.
-const snake = (() => {
-  const CELL = 20;
-  let cv = null, ctx, cols = 0, rows = 0, body, dir, queue, bug, score = 0, best = 0, raf = 0, last, acc;
-  let state = "ready", error = "";
-  try { best = Number(localStorage.getItem("snake-best")) || 0; } catch {}
-  const color = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-  const same = (a, b) => a.x === b.x && a.y === b.y;
-  const interval = () => Math.max(60, 135 - score * 4);
+/* ---------- games/ ---------- */
+// What the games share: canvas sizing, the ready/playing/paused/over states, the loop, keys and touch, the best score
+// (kept in this browser) and the text cards drawn over a game that isn't running. A game is a spec for arcade():
+// size(w, h) → [w, h], reset(g), update(g, dt), draw(g, ctx), intro(), over(g, best, isNew), status(g, best), and
+// optionally press(g, dir) and pointer(g, type, point). It calls g.end(error, record) to finish.
+const color = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+// -1, 0 or 1: arrow keys, or a finger held on the left or right half of the game
+const steer = (g) => (g.held.has("right") - g.held.has("left")) || (g.pointer ? (g.pointer.x < g.W / 2 ? -1 : 1) : 0);
+const tapOr = (touch, key) => (narrow() ? touch : key);
+const startLine = () => [tapOr("Tap to start", "Press Space to start"), "--faint"];
+let playing = null;  // the game on screen
+
+function arcade(spec) {
+  let cv = null, ctx, W = 0, H = 0, g = null, state = "ready", raf = 0, last = 0, from = null, isNew = false, best = null;
+  try { const v = localStorage.getItem(`${spec.id}-best`); if (v !== null) best = Number(v); } catch {}
+  const held = new Set();
 
   function fit() {
     const box = cv.parentElement.getBoundingClientRect();
-    const c = Math.max(12, Math.min(36, Math.floor((box.width - 34) / CELL)));
-    const r = Math.max(12, Math.min(24, Math.floor((box.height - 34) / CELL)));
-    const changed = c !== cols || r !== rows;
-    cols = c; rows = r;
+    const [w, h] = spec.size(Math.max(240, box.width - 34), Math.max(240, box.height - 34));
+    const changed = w !== W || h !== H;
+    W = w; H = h;
     const dpr = window.devicePixelRatio || 1;
-    cv.width = cols * CELL * dpr; cv.height = rows * CELL * dpr;
-    cv.style.width = `${cols * CELL}px`; cv.style.height = `${rows * CELL}px`;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = `${W}px`; cv.style.height = `${H}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     return changed;
   }
-  function reset() {
-    const y = rows >> 1, x = (cols >> 2) + 2;
-    body = [{ x, y }, { x: x - 1, y }, { x: x - 2, y }];
-    dir = { x: 1, y: 0 }; queue = []; score = 0;
-    placeBug();
-  }
-  function placeBug() {
-    const free = [];
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (!body.some((s) => s.x === x && s.y === y)) free.push({ x, y });
-    bug = free[Math.floor(Math.random() * free.length)];
-    if (!bug) end("", true);
-  }
-
-  function step() {
-    if (queue.length) dir = queue.shift();
-    const head = { x: body[0].x + dir.x, y: body[0].y + dir.y };
-    const eats = same(head, bug);
-    if (head.x < 0 || head.y < 0 || head.x >= cols || head.y >= rows) return end("IndexError: snake ran off the end of the file");
-    if (body.slice(0, eats ? body.length : -1).some((s) => same(s, head))) return end("RecursionError: snake called itself");
-    body.unshift(head);
-    if (eats) { score++; placeBug(); } else body.pop();
-    status();
-  }
-  function frame(t) {
-    if (state !== "playing") return;
-    acc += t - last; last = t;
-    while (acc >= interval() && state === "playing") { acc -= interval(); step(); }
-    draw();
-    raf = requestAnimationFrame(frame);
+  function fresh() {
+    state = "ready";
+    g = { W, H, t: 0, score: 0, held, pointer: null, over: false, end, pause };
+    spec.reset(g);
   }
   function play() {
-    if (state === "ready" || state === "over") reset();
-    state = "playing"; last = performance.now(); acc = 0;
+    if (state === "playing") return;
+    if (state === "over") fresh();
+    state = "playing"; last = performance.now();
     cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
-    status();
   }
   function pause() {
     if (state !== "playing") return;
-    state = "paused"; cancelAnimationFrame(raf);
-    draw();
+    state = "paused"; held.clear(); g.pointer = null; cancelAnimationFrame(raf);
+    render();
   }
-  function end(message, won) {
-    state = "over"; cancelAnimationFrame(raf);
-    error = won ? "Exit 0: you ate every bug. Ship it." : message;
-    if (score > best) { best = score; try { localStorage.setItem("snake-best", String(best)); } catch {} }
-    status(); draw();
+  function end(error, record) {
+    state = "over"; g.over = true; g.error = error; held.clear(); g.pointer = null; isNew = false;
+    cancelAnimationFrame(raf);
+    if (record != null && (best == null || (spec.lower ? record < best : record > best))) {
+      best = record; isNew = true;
+      try { localStorage.setItem(`${spec.id}-best`, String(best)); } catch {}
+    }
   }
-  function turn(x, y) {
-    if (state !== "playing") play();
-    const prev = queue.length ? queue[queue.length - 1] : dir;
-    if ((x === prev.x && y === prev.y) || (x === -prev.x && y === -prev.y)) return;
-    if (queue.length < 2) queue.push({ x, y });
+  function frame(t) {
+    const dt = Math.min(0.05, (t - last) / 1000);
+    last = t; g.t += dt;
+    spec.update(g, dt);
+    render();
+    if (state === "playing") raf = requestAnimationFrame(frame);
   }
-  function status() { if (cv) $("#stLines").textContent = `score ${score} · best ${best}`; }
 
-  function rounded(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
-  function drawBug(cx, cy) {
-    ctx.strokeStyle = ctx.fillStyle = color("--kw");
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    for (const dy of [-3, 0, 3]) { ctx.moveTo(cx - 7, cy + dy - 1); ctx.lineTo(cx + 7, cy + dy + 1); }
-    ctx.moveTo(cx - 2, cy - 6); ctx.lineTo(cx - 4, cy - 9); ctx.moveTo(cx + 2, cy - 6); ctx.lineTo(cx + 4, cy - 9);
-    ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(cx, cy + 1, 4.5, 5.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx, cy - 5, 2.6, 0, Math.PI * 2); ctx.fill();
+  function render() {
+    if (!cv) return;
+    ctx.save(); spec.draw(g, ctx); ctx.restore();
+    if (state === "ready") card(spec.intro());
+    if (state === "paused") card([["# paused", "--accent", 600], [tapOr("Tap to resume", "Press Space to resume"), "--faint"]]);
+    if (state === "over") card([...spec.over(g, best, isNew), [tapOr("Tap to play again", "Press Space to play again"), "--faint"]]);
+    $("#stLines").textContent = spec.status(g, best);
   }
   function card(lines) {
-    const w = cols * CELL, h = rows * CELL;
-    ctx.globalAlpha = 0.82; ctx.fillStyle = color("--chrome"); ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
+    ctx.globalAlpha = 0.82; ctx.fillStyle = color("--chrome"); ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
     let size = 13;
-    ctx.font = `${size}px ${color("--mono")}`;
-    const widest = Math.max(...lines.map(([t]) => ctx.measureText(t).width));
-    if (widest > w - 24) size = Math.floor(size * (w - 24) / widest);
-    const lh = size + 9, top = h / 2 - (lines.length * lh) / 2 + lh / 2;
+    ctx.font = `600 ${size}px ${color("--mono")}`;
+    const widest = Math.max(...lines.map(([text]) => ctx.measureText(text).width));
+    if (widest > W - 24) size = Math.floor(size * (W - 24) / widest);
+    const lh = size + 9, top = H / 2 - (lines.length * lh) / 2 + lh / 2;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     lines.forEach(([text, c, weight], i) => {
       ctx.font = `${weight || 400} ${size}px ${color("--mono")}`;
       ctx.fillStyle = color(c);
-      ctx.fillText(text, w / 2, top + i * lh);
+      ctx.fillText(text, W / 2, top + i * lh);
     });
-  }
-  function draw() {
-    const w = cols * CELL, h = rows * CELL;
-    ctx.fillStyle = color("--editor"); ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = color("--line");
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) ctx.fillRect(x * CELL + CELL / 2 - 1, y * CELL + CELL / 2 - 1, 2, 2);
-    if (bug) drawBug(bug.x * CELL + CELL / 2, bug.y * CELL + CELL / 2 + 1);
-    body.forEach((s, i) => {
-      ctx.fillStyle = color(i ? "--type" : "--accent");
-      ctx.globalAlpha = i ? Math.max(0.45, 1 - i / (body.length + 6)) : 1;
-      rounded(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4, 5);
-    });
-    ctx.globalAlpha = 1;
-    if (state === "ready") card([
-      ["snake.py", "--accent", 600],
-      ["Eat the bugs. Avoid walls and yourself.", "--fg"],
-      [narrow() ? "Swipe to steer." : "Arrow keys or WASD to steer.", "--muted"],
-      [narrow() ? "Tap to start" : "Press Space to start", "--faint"],
-    ]);
-    if (state === "paused") card([["# paused", "--accent", 600], [narrow() ? "Tap to resume" : "Press Space to resume", "--faint"]]);
-    if (state === "over") card([
-      ["Traceback (most recent call last):", "--faint"],
-      [error, "--kw", 600],
-      [`score ${score} · best ${best}`, "--fg"],
-      [narrow() ? "Tap to play again" : "Press Space to play again", "--faint"],
-    ]);
   }
 
-  // Pointer: a tap starts or pauses; a drag steers (each 24px of drag is one turn, so one long swipe can make two).
-  let from = null;
-  function onDown(e) { from = { x: e.clientX, y: e.clientY, moved: false }; cv.setPointerCapture(e.pointerId); }
-  function onMove(e) {
-    if (!from) return;
-    const dx = e.clientX - from.x, dy = e.clientY - from.y;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
-    Math.abs(dx) > Math.abs(dy) ? turn(Math.sign(dx), 0) : turn(0, Math.sign(dy));
-    from = { x: e.clientX, y: e.clientY, moved: true };
+  const DIRS = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", w: "up", s: "down", a: "left", d: "right" };
+  function onKey(e, down) {
+    if (e.key === " ") {
+      e.preventDefault();
+      if (down && !e.repeat) state === "playing" ? pause() : play();
+      return;
+    }
+    const k = DIRS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+    if (!k) return;
+    e.preventDefault();
+    if (!down) { held.delete(k); return; }
+    play();
+    held.add(k);
+    if (!e.repeat && spec.press) spec.press(g, k);
   }
-  function onUp() {
-    if (from && !from.moved) state === "playing" ? pause() : play();
+  // A tap starts a game that isn't running; while one runs, the game gets the pointer (g.pointer while held).
+  const at = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  function onDown(e) {
+    cv.setPointerCapture(e.pointerId);
+    from = { tap: state !== "playing" };
+    if (from.tap) return;
+    g.pointer = at(e);
+    if (spec.pointer) spec.pointer(g, "down", g.pointer);
+  }
+  function onMove(e) {
+    if (!from || from.tap) return;
+    g.pointer = at(e);
+    if (spec.pointer) spec.pointer(g, "move", g.pointer);
+  }
+  function onUp(e) {
+    if (!from) return;
+    if (from.tap) play();
+    else if (state === "playing") { if (spec.pointer) spec.pointer(g, "up", at(e)); g.pointer = null; }
     from = null;
   }
   const resize = new ResizeObserver(() => {
-    if (!cv || state === "playing") return;
-    if (fit()) { state = "ready"; reset(); }
-    draw();
+    if (cv && state !== "playing" && fit()) fresh();
+    render();
   });
 
-  const KEYS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
-  document.addEventListener("keydown", (e) => {
-    if (!cv || !$("#paletteWrap").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
-    const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
-    if (k) { e.preventDefault(); turn(...k); }
-    if (e.key === " ") { e.preventDefault(); state === "playing" ? pause() : play(); }
-  });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
-
-  return {
+  const api = {
     mount(canvas) {
-      cv = canvas; ctx = cv.getContext("2d");
-      const resized = fit();
-      if (resized || !body) { state = "ready"; reset(); }
+      cv = canvas; ctx = cv.getContext("2d"); playing = api;
+      if (fit() || !g) fresh();
       cv.addEventListener("pointerdown", onDown);
       cv.addEventListener("pointermove", onMove);
       cv.addEventListener("pointerup", onUp);
-      cv.addEventListener("pointercancel", () => (from = null));
+      cv.addEventListener("pointercancel", () => { from = null; if (g) g.pointer = null; });
       resize.observe(cv.parentElement);
-      status(); draw();
+      render();
     },
     unmount() {
       if (!cv) return;
-      pause(); resize.disconnect(); cv = null;
+      pause(); resize.disconnect(); cv = null; playing = null;
     },
+    onKey, pause,
   };
+  return api;
+}
+document.addEventListener("keydown", (e) => {
+  if (playing && $("#paletteWrap").hidden && !e.metaKey && !e.ctrlKey && !e.altKey) playing.onKey(e, true);
+});
+document.addEventListener("keyup", (e) => { if (playing) playing.onKey(e, false); });
+document.addEventListener("visibilitychange", () => { if (document.hidden && playing) playing.pause(); });
+window.addEventListener("blur", () => { if (playing) playing.pause(); });
+
+function rounded(ctx, x, y, w, h, r, fill) { ctx.fillStyle = color(fill); ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
+function dots(ctx, W, H) {
+  ctx.fillStyle = color("--editor"); ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = color("--line");
+  for (let y = 10; y < H; y += 20) for (let x = 10; x < W; x += 20) ctx.fillRect(x - 1, y - 1, 2, 2);
+}
+function hud(ctx, lines, x, y, align = "left") {
+  ctx.font = `500 12px ${color("--mono")}`; ctx.textAlign = align; ctx.textBaseline = "top";
+  lines.forEach(([text, c], i) => { ctx.fillStyle = color(c); ctx.fillText(text, x, y + i * 17); });
+}
+const traceback = (g, best, isNew, extra) => [
+  ["Traceback (most recent call last):", "--faint"],
+  [g.error, "--kw", 600],
+  [`score ${g.score} · best ${best ?? 0}${isNew ? " · new best!" : ""}`, "--fg"],
+  ...(extra || []),
+];
+
+/* snake.py: eat bugs, grow, speed up */
+const DIR = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+function drawBug(ctx, cx, cy) {
+  ctx.strokeStyle = ctx.fillStyle = color("--kw");
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  for (const dy of [-3, 0, 3]) { ctx.moveTo(cx - 7, cy + dy - 1); ctx.lineTo(cx + 7, cy + dy + 1); }
+  ctx.moveTo(cx - 2, cy - 6); ctx.lineTo(cx - 4, cy - 9); ctx.moveTo(cx + 2, cy - 6); ctx.lineTo(cx + 4, cy - 9);
+  ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(cx, cy + 1, 4.5, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy - 5, 2.6, 0, Math.PI * 2); ctx.fill();
+}
+function snakeTurn(g, [x, y]) {
+  const prev = g.queue.length ? g.queue[g.queue.length - 1] : g.dir;
+  if ((x === prev.x && y === prev.y) || (x === -prev.x && y === -prev.y)) return;
+  if (g.queue.length < 2) g.queue.push({ x, y });
+}
+function snakeBug(g) {
+  const free = [];
+  for (let y = 0; y < g.rows; y++) for (let x = 0; x < g.cols; x++) if (!g.body.some((s) => s.x === x && s.y === y)) free.push({ x, y });
+  g.bug = pick(free);
+  if (!g.bug) { g.won = true; g.end("", g.score); }
+}
+const snake = {
+  id: "snake",
+  size: (w, h) => [clamp(Math.floor(w / 20), 12, 36) * 20, clamp(Math.floor(h / 20), 12, 24) * 20],
+  reset(g) {
+    g.cols = g.W / 20; g.rows = g.H / 20;
+    const y = g.rows >> 1, x = (g.cols >> 2) + 2;
+    g.body = [{ x, y }, { x: x - 1, y }, { x: x - 2, y }];
+    g.dir = { x: 1, y: 0 }; g.queue = []; g.acc = 0;
+    snakeBug(g);
+  },
+  press: (g, k) => snakeTurn(g, DIR[k]),
+  // Each 24px of drag is one turn, so one long swipe can make two; a tap pauses.
+  pointer(g, type, p) {
+    if (type === "down") { g.swipe = { x: p.x, y: p.y, moved: false }; return; }
+    if (!g.swipe) return;
+    if (type === "up") { if (!g.swipe.moved) g.pause(); g.swipe = null; return; }
+    const dx = p.x - g.swipe.x, dy = p.y - g.swipe.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    snakeTurn(g, Math.abs(dx) > Math.abs(dy) ? [Math.sign(dx), 0] : [0, Math.sign(dy)]);
+    g.swipe = { x: p.x, y: p.y, moved: true };
+  },
+  update(g, dt) {
+    g.acc += dt * 1000;
+    const interval = Math.max(60, 135 - g.score * 4);
+    while (g.acc >= interval && !g.over) {
+      g.acc -= interval;
+      if (g.queue.length) g.dir = g.queue.shift();
+      const head = { x: g.body[0].x + g.dir.x, y: g.body[0].y + g.dir.y };
+      const eats = head.x === g.bug.x && head.y === g.bug.y;
+      if (head.x < 0 || head.y < 0 || head.x >= g.cols || head.y >= g.rows) return g.end("IndexError: snake ran off the end of the file", g.score);
+      if (g.body.slice(0, eats ? g.body.length : -1).some((s) => s.x === head.x && s.y === head.y)) return g.end("RecursionError: snake called itself", g.score);
+      g.body.unshift(head);
+      if (eats) { g.score++; snakeBug(g); } else g.body.pop();
+    }
+  },
+  draw(g, ctx) {
+    dots(ctx, g.W, g.H);
+    if (g.bug) drawBug(ctx, g.bug.x * 20 + 10, g.bug.y * 20 + 11);
+    g.body.forEach((s, i) => {
+      ctx.globalAlpha = i ? Math.max(0.45, 1 - i / (g.body.length + 6)) : 1;
+      rounded(ctx, s.x * 20 + 2, s.y * 20 + 2, 16, 16, 5, i ? "--type" : "--accent");
+    });
+  },
+  intro: () => [
+    ["snake.py", "--accent", 600],
+    ["Eat the bugs. Avoid walls and yourself.", "--fg"],
+    [tapOr("Swipe to steer.", "Arrow keys or WASD to steer."), "--muted"],
+    startLine(),
+  ],
+  over: (g, best, isNew) => g.won
+    ? [["Exit 0", "--str", 600], ["You ate every bug. Ship it.", "--fg"], [`score ${g.score} · best ${best}`, "--fg"]]
+    : traceback(g, best, isNew),
+  status: (g, best) => `score ${g.score} · best ${best ?? 0}`,
+};
+
+const CAR_COLORS = ["--type", "--attr", "--meta", "--str", "--kw"];
+/* career_highway.rs: an OutRun-style drive through the résumé, 2010 to HEAD */
+// Pseudo-3D: the road is a list of short segments, each with a curve and a height; every frame projects the next
+// HW.draw of them from the camera, nearest first, then draws signs and cars on top from far to near.
+const HW = { seg: 200, road: 2000, camH: 1000, depth: 0.84, draw: 160, max: 200 * 60 };
+const ROLES = {
+  2010: ["AmeriFlex", "Software Engineer · PHP"],
+  2012: ["DealerSocket", "Senior Engineer · Perl"],
+  2015: ["DealerSocket", "Principal Engineer · Java"],
+  2018: ["Inventory+", "App Architect · Python"],
+  2020: ["Solera", "Enterprise Architect · YAML"],
+  2022: ["Twilio Segment", "Staff Engineer · Go"],
+  2024: ["Twilio", "Agentic Memory · Go"],
+};
+const DEBT = ["legacy_code", "merge conflict", "TODO", "flaky test", "tech debt", "WIP", "hotfix", "scope creep"];
+const HIGHWAY = (() => {
+  let seed = 2010;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const segs = [], years = [];
+  const lastY = () => (segs.length ? segs[segs.length - 1].y2 : 0);
+  const add = (curve, y) => { const i = segs.length; segs.push({ i, z1: i * HW.seg, y1: lastY(), y2: y, curve, dark: Math.floor(i / 3) % 2, sprites: [] }); };
+  const easeIn = (a, b, p) => a + (b - a) * p * p;
+  const easeInOut = (a, b, p) => a + (b - a) * (0.5 - Math.cos(p * Math.PI) / 2);
+  function section(len, curve, hill) {
+    const enter = len >> 2, hold = len >> 1, leave = len - enter - hold, from = lastY(), to = from + hill * HW.seg;
+    for (let n = 0; n < enter; n++) add(easeIn(0, curve, n / enter), easeInOut(from, to, n / len));
+    for (let n = 0; n < hold; n++) add(curve, easeInOut(from, to, (enter + n) / len));
+    for (let n = 0; n < leave; n++) add(easeInOut(curve, 0, n / leave), easeInOut(from, to, (enter + hold + n) / len));
+  }
+  section(40, 0, 0);
+  for (let year = 2010; year < 2024; year++) {
+    years.push([year, segs.length]);
+    for (let k = 0; k < 3; k++) section(50 + Math.floor(rnd() * 30), rnd() < 0.2 ? 0 : (rnd() * 2 - 1) * 5, (rnd() * 2 - 1) * 30);
+  }
+  years.push([2024, segs.length]);
+  section(60, 0, -lastY() / HW.seg);  // level out for the finish
+  const finish = segs.length;
+  section(HW.draw + 20, 0, 0);
+  for (let i = 20; i < segs.length; i += 18) segs[i].sprites.push({ kind: "post", offset: -1.15 }, { kind: "post", offset: 1.15 });
+  years.forEach(([year, i], n) => {
+    segs[i].sprites.push({ kind: "year", offset: n % 2 ? 1.35 : -1.35, text: String(year) });
+    if (ROLES[year]) segs[i + 12].sprites.push({ kind: "board", offset: n % 2 ? -1.75 : 1.75, lines: ROLES[year] });
+  });
+  segs[finish].sprites.push({ kind: "finish", offset: 0 });
+  return { segs, years, finishZ: finish * HW.seg };
 })();
+const segAt = (z) => HIGHWAY.segs[clamp(Math.floor(z / HW.seg), 0, HIGHWAY.segs.length - 1)];
+const PLAYER_Z = HW.camH * HW.depth;  // how far ahead of the camera the player's car sits
+
+function drawSprite(ctx, g, sp, x, y, s, clip) {
+  const k = s * g.W / 2;  // world units → pixels at this distance
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, g.W, clip); ctx.clip();
+  const font = (px, weight = 600) => `${weight} ${px}px ${color("--mono")}`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (sp.kind === "post") {
+    ctx.fillStyle = color("--faint"); ctx.fillRect(x - 15 * k, y - 140 * k, 30 * k, 140 * k);
+    ctx.fillStyle = color("--accent"); ctx.fillRect(x - 15 * k, y - 140 * k, 30 * k, 30 * k);
+  } else if (sp.kind === "year") {
+    const w = 560 * k, h = 300 * k, top = y - 900 * k;
+    ctx.fillStyle = color("--faint"); ctx.fillRect(x - 18 * k, top + h, 36 * k, 900 * k - h);
+    rounded(ctx, x - w / 2, top, w, h, 16 * k, "--str");
+    if (h > 8) { ctx.font = font(h * 0.55); ctx.fillStyle = color("--chrome"); ctx.fillText(sp.text, x, top + h / 2 + 1); }
+  } else if (sp.kind === "board") {
+    const w = 1700 * k, h = 640 * k, top = y - 1500 * k;
+    ctx.fillStyle = color("--faint");
+    ctx.fillRect(x - w * 0.3, top + h, 40 * k, 1500 * k - h); ctx.fillRect(x + w * 0.3 - 40 * k, top + h, 40 * k, 1500 * k - h);
+    rounded(ctx, x - w / 2, top, w, h, 20 * k, "--side");
+    ctx.strokeStyle = color("--accent"); ctx.lineWidth = Math.max(1, 14 * k); ctx.stroke();
+    if (h > 18) {
+      ctx.font = font(h * 0.26); ctx.fillStyle = color("--accent"); ctx.fillText(sp.lines[0], x, top + h * 0.36);
+      ctx.font = font(h * 0.17, 400); ctx.fillStyle = color("--fg"); ctx.fillText(sp.lines[1], x, top + h * 0.7);
+    }
+  } else if (sp.kind === "finish") {
+    const half = HW.road * 1.15 * k, top = y - 1300 * k, h = 360 * k;
+    ctx.fillStyle = color("--faint");
+    ctx.fillRect(x - half - 30 * k, top, 60 * k, 1300 * k); ctx.fillRect(x + half - 30 * k, top, 60 * k, 1300 * k);
+    rounded(ctx, x - half, top, half * 2, h, 12 * k, "--chrome");
+    ctx.strokeStyle = color("--accent"); ctx.lineWidth = Math.max(1, 16 * k); ctx.stroke();
+    if (h > 10) { ctx.font = font(h * 0.6); ctx.fillStyle = color("--accent"); ctx.fillText("HEAD → main", x, top + h / 2 + 1); }
+  } else if (sp.kind === "car") {
+    const w = 640 * k, h = 330 * k, top = y - h - 40 * k;
+    rounded(ctx, x - w / 2, top + h * 0.15, w, h * 0.85, 40 * k, sp.fill);
+    ctx.globalAlpha = 0.6; rounded(ctx, x - w * 0.34, top, w * 0.68, h * 0.4, 30 * k, "--chrome"); ctx.globalAlpha = 1;
+    ctx.fillStyle = color("--kw");
+    ctx.fillRect(x - w * 0.44, top + h * 0.5, w * 0.16, h * 0.14); ctx.fillRect(x + w * 0.28, top + h * 0.5, w * 0.16, h * 0.14);
+    ctx.fillStyle = "#000"; ctx.fillRect(x - w * 0.46, top + h, w * 0.18, 40 * k); ctx.fillRect(x + w * 0.28, top + h, w * 0.18, 40 * k);
+    const px = Math.min(15, w * 0.16);
+    if (px > 7) {
+      ctx.font = font(px, 500); ctx.lineWidth = 3; ctx.strokeStyle = color("--chrome"); ctx.fillStyle = color("--fg");
+      ctx.strokeText(sp.label, x, top - px); ctx.fillText(sp.label, x, top - px);
+    }
+  }
+  ctx.restore();
+}
+// Your car's size and place on screen; the hit test uses it too, so a hit is when the cars visibly touch
+function playerCar(W, H) {
+  const cw = clamp(W * 0.17, 64, 150), ch = cw * 0.48;
+  return { cw, ch, cy: H - ch - 14 };
+}
+const careerHighway = {
+  id: "career-highway",
+  lower: true,
+  size: (w, h) => { w = Math.min(w, 900); return [w, Math.min(h, Math.round(w * (w < 500 ? 1.15 : 0.6)))]; },
+  reset(g) {
+    g.pos = 0; g.x = 0; g.speed = 0; g.time = 0; g.sky = 0; g.bump = 0; g.year = 2010; g.frame = 0;
+    g.cars = Array.from({ length: 26 }, (_, n) => ({
+      z: 3000 + (n + Math.random() * 0.6) * (HIGHWAY.finishZ - 6000) / 26,
+      offset: pick([-0.66, 0, 0.66]), speed: HW.max * (0.25 + Math.random() * 0.25), label: pick(DEBT), fill: pick(CAR_COLORS),
+    }));
+  },
+  update(g, dt) {
+    const seg = segAt(g.pos + PLAYER_Z), pct = g.speed / HW.max, turn = steer(g);
+    g.x += turn * dt * 2.4 * pct;
+    g.x -= dt * 2 * pct * pct * seg.curve * 0.32;  // corners push you outward
+    g.x = clamp(g.x, -2.3, 2.3);
+    const off = Math.abs(g.x) > 1, top = off ? HW.max / 4 : HW.max;
+    g.speed = g.speed > top ? Math.max(top, g.speed - HW.max * 0.6 * dt) : Math.min(top, g.speed + HW.max / 5 * dt);
+    const me = playerCar(g.W, g.H);
+    for (const c of g.cars) {
+      c.z += c.speed * dt;
+      const dz = c.z - (g.pos + PLAYER_Z), was = c.dz;
+      c.dz = dz;
+      // where the car ahead is drawn: its back wheels' screen y and its half width, at its scale relative to yours
+      // (the bottom of the screen is PLAYER_Z away, where one road half-width is W pixels)
+      const r = PLAYER_Z / (PLAYER_Z + Math.max(0, dz)), rear = g.H / 2 * (1 + r);
+      const gap = Math.abs(c.offset - g.x) * g.W * r, reach = me.cw / 2 * 0.9 + 0.16 * g.W * r * 0.9;
+      // touching: its back bumper is down in the lower half of your car, and the bodies overlap side to side
+      // (or it was ahead last frame and is now beside you: a slow frame skipped the touch)
+      const level = rear > me.cy + me.ch * 0.5 && (dz > 0 || was > 0);
+      if (g.speed > c.speed && level && gap < reach) {
+        g.speed = c.speed * 0.5; g.pos = c.z - PLAYER_Z - HW.seg * 1.3; g.bump = 0.7; g.bumped = c.label; c.dz = HW.seg * 1.3;
+      }
+    }
+    g.pos += g.speed * dt;
+    g.time += dt; g.bump = Math.max(0, g.bump - dt);
+    g.sky -= seg.curve * pct * dt * 0.012;
+    g.off = off;
+    for (const [year, i] of HIGHWAY.years) if (g.pos + PLAYER_Z >= i * HW.seg) g.year = year;
+    if (g.pos + PLAYER_Z >= HIGHWAY.finishZ) g.end(null, Math.round(g.time * 10) / 10);
+  },
+  draw(g, ctx) {
+    const { W, H } = g, segs = HIGHWAY.segs;
+    g.frame++;
+    // sky, a striped sun and hills that drift as the road turns
+    const sky = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+    sky.addColorStop(0, color("--chrome")); sky.addColorStop(1, "#2a1c26");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    const sunY = H * 0.42, r = Math.min(W, H) * 0.17, sunX = W / 2 + ((g.sky * W) % W) * 0.15;
+    const sun = ctx.createLinearGradient(0, sunY - r, 0, sunY + r);
+    sun.addColorStop(0, color("--accent")); sun.addColorStop(1, color("--kw"));
+    ctx.fillStyle = sun; ctx.beginPath(); ctx.arc(sunX, sunY, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = color("--chrome");
+    for (let i = 0; i < 5; i++) ctx.fillRect(sunX - r, sunY + r * (0.1 + i * 0.2), r * 2, 2 + i * 1.2);
+    ctx.fillStyle = color("--side");
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) {
+      const u = x / W + g.sky;
+      ctx.lineTo(x, H * 0.5 - (Math.sin(u * 9) * 0.5 + Math.sin(u * 23 + 1) * 0.25 + 0.9) * H * 0.07);
+    }
+    ctx.lineTo(W, H); ctx.fill();
+    // road, nearest segment first; each later one only draws above what's already drawn (hills hide the road)
+    const base = segAt(g.pos), basePct = (g.pos % HW.seg) / HW.seg;
+    const me = segAt(g.pos + PLAYER_Z), mePct = ((g.pos + PLAYER_Z) % HW.seg) / HW.seg;
+    const camY = lerp(me.y1, me.y2, mePct) + HW.camH;
+    const project = (z, y, camX) => {
+      const s = HW.depth / (z - g.pos);
+      return { s, x: W / 2 - s * camX * W / 2, y: H / 2 - s * (y - camY) * H / 2, w: s * HW.road * W / 2 };
+    };
+    let x = 0, dx = -base.curve * basePct, maxy = H;
+    const quad = (a, b, wa, wb, fill) => {
+      ctx.fillStyle = fill; ctx.beginPath();
+      ctx.moveTo(a.x - wa, a.y); ctx.lineTo(a.x + wa, a.y); ctx.lineTo(b.x + wb, b.y); ctx.lineTo(b.x - wb, b.y); ctx.fill();
+    };
+    const C = { grass: ["#14171c", "#171a20"], rumble: [color("--kw"), color("--fg")], road: ["#22262e", "#252a32"], lane: color("--faint") };
+    for (let n = 0; n < HW.draw; n++) {
+      const s = segs[base.i + n];
+      if (!s) break;
+      s.clip = maxy;
+      s.p1 = project(s.z1, s.y1, g.x * HW.road - x);
+      s.p2 = project(s.z1 + HW.seg, s.y2, g.x * HW.road - x - dx);
+      s.frame = g.frame;
+      x += dx; dx += s.curve;
+      const { p1, p2 } = s;
+      if (s.z1 - g.pos <= HW.depth || p2.y >= p1.y || p2.y >= maxy) continue;
+      ctx.fillStyle = C.grass[s.dark]; ctx.fillRect(0, p2.y, W, p1.y - p2.y + 1);
+      quad(p1, p2, p1.w * 1.16, p2.w * 1.16, C.rumble[s.dark]);
+      quad(p1, p2, p1.w, p2.w, C.road[s.dark]);
+      if (!s.dark) for (const lane of [-1 / 3, 1 / 3]) {
+        quad({ x: p1.x + lane * 2 * p1.w, y: p1.y }, { x: p2.x + lane * 2 * p2.w, y: p2.y }, p1.w / 50, p2.w / 50, C.lane);
+      }
+      maxy = p2.y;
+    }
+    // signs and cars, far to near
+    const carsAt = {};
+    for (const c of g.cars) (carsAt[Math.floor(c.z / HW.seg)] ||= []).push(c);
+    for (let n = HW.draw - 1; n >= 0; n--) {
+      const s = segs[base.i + n];
+      if (!s || s.frame !== g.frame || s.z1 - g.pos <= HW.depth) continue;
+      for (const sp of s.sprites) drawSprite(ctx, g, sp, s.p1.x + s.p1.s * sp.offset * HW.road * W / 2, s.p1.y, s.p1.s, s.clip);
+      for (const c of carsAt[s.i] || []) {
+        const t = (c.z % HW.seg) / HW.seg, p = { x: lerp(s.p1.x, s.p2.x, t), y: lerp(s.p1.y, s.p2.y, t), s: lerp(s.p1.s, s.p2.s, t) };
+        drawSprite(ctx, g, { kind: "car", label: c.label, fill: c.fill }, p.x + p.s * c.offset * HW.road * W / 2, p.y, p.s, s.clip);
+      }
+    }
+    // your car, from behind
+    const { cw, ch, cy: y0 } = playerCar(W, H), turn = steer(g);
+    const cx = W / 2 + turn * 4, cy = y0 + (g.off ? Math.random() * 3 : Math.sin(g.t * 40) * (g.speed > 0 ? 0.6 : 0));
+    ctx.fillStyle = "#000"; ctx.fillRect(cx - cw * 0.48, cy + ch * 0.8, cw * 0.2, ch * 0.3); ctx.fillRect(cx + cw * 0.28, cy + ch * 0.8, cw * 0.2, ch * 0.3);
+    rounded(ctx, cx - cw / 2, cy + ch * 0.25, cw, ch * 0.7, cw * 0.1, "--accent");
+    rounded(ctx, cx - cw * 0.34, cy, cw * 0.68, ch * 0.42, cw * 0.08, "--accent");
+    ctx.globalAlpha = 0.7; rounded(ctx, cx - cw * 0.28, cy + ch * 0.06, cw * 0.56, ch * 0.28, cw * 0.05, "--chrome"); ctx.globalAlpha = 1;
+    rounded(ctx, cx - cw * 0.44, cy + ch * 0.42, cw * 0.18, ch * 0.13, 2, "--kw");
+    rounded(ctx, cx + cw * 0.26, cy + ch * 0.42, cw * 0.18, ch * 0.13, 2, "--kw");
+    // HUD
+    hud(ctx, [[String(g.year), "--accent"], [ROLES[Object.keys(ROLES).filter((y) => y <= g.year).pop()][1], "--muted"]], 12, 10);
+    hud(ctx, [[`${g.time.toFixed(1)} s`, "--fg"], [`${Math.round(g.speed / HW.max * 180)} km/h`, "--muted"]], W - 12, 10, "right");
+    if (g.bump > 0) {
+      ctx.globalAlpha = Math.min(1, g.bump * 2);
+      hud(ctx, [[`hit ${g.bumped}`, "--kw"]], W / 2, 44, "center");
+      ctx.globalAlpha = 1;
+    }
+  },
+  intro: () => [
+    ["career_highway.rs", "--accent", 600],
+    ["Drive from 2010 to HEAD. Dodge the tech debt.", "--fg"],
+    [tapOr("Hold the left or right side to steer.", "← → or A D to steer. Gas is automatic."), "--muted"],
+    startLine(),
+  ],
+  over: (g, best, isNew) => [
+    ["✓ reached HEAD", "--str", 600],
+    [`${g.time.toFixed(1)} s${isNew ? " · new best!" : ""}`, "--fg"],
+    [`best ${best.toFixed(1)} s`, "--muted"],
+  ],
+  status: (g, best) => `${g.time.toFixed(1)} s · best ${best == null ? "—" : `${best.toFixed(1)} s`}`,
+};
+
+const GAMES = {
+  "games/snake.py": arcade(snake),
+  "games/career_highway.rs": arcade(careerHighway),
+};
 
 /* ---------- agent ---------- */
 const INTENTS = [
