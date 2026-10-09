@@ -360,7 +360,7 @@ Through high school and college I freelanced, designed, and built e-commerce sit
 
 University of Texas at Dallas, 2006–2010` },
 
-"experience/2024-twilio-agentic-memory.go": { lang: "go", src:
+"experience/2024-twilio-principal.go": { lang: "go", src:
 `// Twilio · Agentic Memory
 // Principal Software Engineer · 2024 – present
 //
@@ -384,7 +384,7 @@ var AgenticMemory = Role{
 	Stack: []string{"Go"},
 }` },
 
-"experience/2022-segment.go": { lang: "go", src:
+"experience/2022-segment-staff.go": { lang: "go", src:
 `// Twilio Segment · San Francisco
 // Staff Software Engineer · 2022 – 2024
 
@@ -605,8 +605,8 @@ RESUME_PDF="https://bmoseley-public.s3.amazonaws.com/blayne_moseley_resume.pdf"`
 };
 
 const COMMITS = [
-  { hash: "f02b7c9", year: "2024", msg: "Move to agentic memory as Principal Software Engineer", file: "experience/2024-twilio-agentic-memory.go", tag: "HEAD" },
-  { hash: "d4c8e16", year: "2022", msg: "Join Twilio Segment as Staff Software Engineer", file: "experience/2022-segment.go" },
+  { hash: "f02b7c9", year: "2024", msg: "Move to agentic memory as Principal Software Engineer", file: "experience/2024-twilio-principal.go", tag: "HEAD" },
+  { hash: "d4c8e16", year: "2022", msg: "Join Twilio Segment as Staff Software Engineer", file: "experience/2022-segment-staff.go" },
   { hash: "71ab3f9", year: "2020", msg: "Merge DealerSocket into Solera; become Enterprise Architect", file: "experience/2020-solera.yaml" },
   { hash: "e27d410", year: "2018", msg: "Promote to Application Architect, Inventory+", file: "experience/2018-dealersocket-architect.py" },
   { hash: "9c0e5aa", year: "2015", msg: "Promote to Principal Software Engineer", file: "experience/2015-dealersocket-principal.java" },
@@ -1321,7 +1321,7 @@ const GAMES = {
 /* ---------- agent ---------- */
 const INTENTS = [
   { id: "now", chip: "What is he working on now?", match: /now|current|segment|twilio|today/i,
-    steps: [{ tool: "Read", file: "experience/2024-twilio-agentic-memory.go" }],
+    steps: [{ tool: "Read", file: "experience/2024-twilio-principal.go" }],
     answer: "Since 2024 Blayne has been a **Principal Software Engineer** at Twilio, leading the team that builds **agentic memory**. He built a load testing framework now used on half a dozen projects, and a stable product on top of unstable LLM providers. Before that he spent two years on Segment's storage team, in a pipeline that handles up to **1 billion events per second**." },
   { id: "career", chip: "Career in 30 seconds", match: /career|summar|history|background|timeline|30|resume|who/i,
     steps: [{ tool: "Bash", cmd: "git log --oneline --reverse" }],
@@ -1454,7 +1454,7 @@ if (AGENT) {
 
 /* ---------- boot ---------- */
 renderCommits();
-tabs = ["README.md", "experience/2024-twilio-agentic-memory.go"];
+tabs = ["README.md", "experience/2024-twilio-principal.go"];
 openFile("README.md");
 if (narrow()) setSidebar(false); else syncRail();
 </script>
