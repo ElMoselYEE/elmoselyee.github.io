@@ -146,6 +146,10 @@ a { color: var(--type); }
 .preview .lead strong { color: var(--fg); }
 .preview button.link { color: var(--type); text-decoration: underline; text-underline-offset: 3px; padding: 0; }
 
+/* snake.py */
+.game { height: 100%; display: grid; place-items: center; padding: 16px; }
+.game canvas { display: block; border: 1px solid var(--line); border-radius: 6px; touch-action: none; cursor: pointer; }
+
 .welcome { height: 100%; display: grid; place-content: center; gap: 12px; color: var(--faint); font: 13px var(--mono); text-align: center; padding: 16px; }
 .welcome b { color: var(--muted); font-weight: 500; }
 
@@ -350,6 +354,7 @@ Through high school and college I freelanced, designed, and built e-commerce sit
 - \`skills.json\` is the short version of my stack.
 - \`CLAUDE.md\` is how I work with AI agents, written for the agents.
 - \`contact.sh\` has how to reach me.
+- \`snake.py\` is a break from reading. Eat the bugs.
 
 ## Education
 
@@ -593,6 +598,10 @@ EMAIL="bmoseley@gmail.com"
 LINKEDIN="https://www.linkedin.com/in/blaynemoseley"
 GITHUB="https://github.com/elmoselyee"
 RESUME_PDF="https://bmoseley-public.s3.amazonaws.com/blayne_moseley_resume.pdf"` },
+
+// Opens as a game, not as code (see snake below); src only feeds the palette.
+"snake.py": { lang: "python", game: true, src:
+`"""snake.py: eat the bugs, don't hit the walls."""` },
 };
 
 const COMMITS = [
@@ -736,6 +745,7 @@ function highlight(f) {
 }
 function renderEditor() {
   const ed = $("#editor");
+  snake.unmount();
   if (!active) {
     $("#crumbs").innerHTML = "";
     ed.innerHTML = `<div class="welcome"><b>blayne-moseley</b><span>⌘P  go to file</span>${AGENT ? "<span>✻  ask the agent below</span>" : ""}</div>`;
@@ -754,6 +764,9 @@ function renderEditor() {
       : `<p>Open any file from the explorer, or press <code>⌘P</code> to jump to one.</p>`;
     html = html.replace("<h2>Education</h2>", tip + "<h2>Education</h2>");
     ed.innerHTML = `<article class="preview">${html}</article>`;
+  } else if (f.game) {
+    ed.innerHTML = `<div class="game"><canvas aria-label="Snake game: arrow keys or WASD to steer, Space to start"></canvas></div>`;
+    snake.mount(ed.querySelector("canvas"));
   } else {
     const nums = Array.from({ length: n }, (_, i) => i + 1).join("\n");
     ed.innerHTML = `<div class="code" id="code"><div class="gutter">${nums}</div><pre><code>${highlight(f)}</code></pre></div>`;
@@ -816,6 +829,186 @@ document.addEventListener("keydown", (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "p") { e.preventDefault(); showPalette(); }
   if (e.key === "Escape") hidePalette();
 });
+
+/* ---------- snake.py ---------- */
+// Snake in the editor pane: eat bugs, grow, speed up. Arrows/WASD or swipes; Space or a tap starts and pauses.
+// The game survives switching tabs (it pauses); the best score stays in this browser.
+const snake = (() => {
+  const CELL = 20;
+  let cv = null, ctx, cols = 0, rows = 0, body, dir, queue, bug, score = 0, best = 0, raf = 0, last, acc;
+  let state = "ready", error = "";
+  try { best = Number(localStorage.getItem("snake-best")) || 0; } catch {}
+  const color = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const same = (a, b) => a.x === b.x && a.y === b.y;
+  const interval = () => Math.max(60, 135 - score * 4);
+
+  function fit() {
+    const box = cv.parentElement.getBoundingClientRect();
+    const c = Math.max(12, Math.min(36, Math.floor((box.width - 34) / CELL)));
+    const r = Math.max(12, Math.min(24, Math.floor((box.height - 34) / CELL)));
+    const changed = c !== cols || r !== rows;
+    cols = c; rows = r;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = cols * CELL * dpr; cv.height = rows * CELL * dpr;
+    cv.style.width = `${cols * CELL}px`; cv.style.height = `${rows * CELL}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return changed;
+  }
+  function reset() {
+    const y = rows >> 1, x = (cols >> 2) + 2;
+    body = [{ x, y }, { x: x - 1, y }, { x: x - 2, y }];
+    dir = { x: 1, y: 0 }; queue = []; score = 0;
+    placeBug();
+  }
+  function placeBug() {
+    const free = [];
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (!body.some((s) => s.x === x && s.y === y)) free.push({ x, y });
+    bug = free[Math.floor(Math.random() * free.length)];
+    if (!bug) end("", true);
+  }
+
+  function step() {
+    if (queue.length) dir = queue.shift();
+    const head = { x: body[0].x + dir.x, y: body[0].y + dir.y };
+    const eats = same(head, bug);
+    if (head.x < 0 || head.y < 0 || head.x >= cols || head.y >= rows) return end("IndexError: snake ran off the end of the file");
+    if (body.slice(0, eats ? body.length : -1).some((s) => same(s, head))) return end("RecursionError: snake called itself");
+    body.unshift(head);
+    if (eats) { score++; placeBug(); } else body.pop();
+    status();
+  }
+  function frame(t) {
+    if (state !== "playing") return;
+    acc += t - last; last = t;
+    while (acc >= interval() && state === "playing") { acc -= interval(); step(); }
+    draw();
+    raf = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (state === "ready" || state === "over") reset();
+    state = "playing"; last = performance.now(); acc = 0;
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+    status();
+  }
+  function pause() {
+    if (state !== "playing") return;
+    state = "paused"; cancelAnimationFrame(raf);
+    draw();
+  }
+  function end(message, won) {
+    state = "over"; cancelAnimationFrame(raf);
+    error = won ? "Exit 0: you ate every bug. Ship it." : message;
+    if (score > best) { best = score; try { localStorage.setItem("snake-best", String(best)); } catch {} }
+    status(); draw();
+  }
+  function turn(x, y) {
+    if (state !== "playing") play();
+    const prev = queue.length ? queue[queue.length - 1] : dir;
+    if ((x === prev.x && y === prev.y) || (x === -prev.x && y === -prev.y)) return;
+    if (queue.length < 2) queue.push({ x, y });
+  }
+  function status() { if (cv) $("#stLines").textContent = `score ${score} · best ${best}`; }
+
+  function rounded(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
+  function drawBug(cx, cy) {
+    ctx.strokeStyle = ctx.fillStyle = color("--kw");
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (const dy of [-3, 0, 3]) { ctx.moveTo(cx - 7, cy + dy - 1); ctx.lineTo(cx + 7, cy + dy + 1); }
+    ctx.moveTo(cx - 2, cy - 6); ctx.lineTo(cx - 4, cy - 9); ctx.moveTo(cx + 2, cy - 6); ctx.lineTo(cx + 4, cy - 9);
+    ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, cy + 1, 4.5, 5.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy - 5, 2.6, 0, Math.PI * 2); ctx.fill();
+  }
+  function card(lines) {
+    const w = cols * CELL, h = rows * CELL;
+    ctx.globalAlpha = 0.82; ctx.fillStyle = color("--chrome"); ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
+    let size = 13;
+    ctx.font = `${size}px ${color("--mono")}`;
+    const widest = Math.max(...lines.map(([t]) => ctx.measureText(t).width));
+    if (widest > w - 24) size = Math.floor(size * (w - 24) / widest);
+    const lh = size + 9, top = h / 2 - (lines.length * lh) / 2 + lh / 2;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    lines.forEach(([text, c, weight], i) => {
+      ctx.font = `${weight || 400} ${size}px ${color("--mono")}`;
+      ctx.fillStyle = color(c);
+      ctx.fillText(text, w / 2, top + i * lh);
+    });
+  }
+  function draw() {
+    const w = cols * CELL, h = rows * CELL;
+    ctx.fillStyle = color("--editor"); ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = color("--line");
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) ctx.fillRect(x * CELL + CELL / 2 - 1, y * CELL + CELL / 2 - 1, 2, 2);
+    if (bug) drawBug(bug.x * CELL + CELL / 2, bug.y * CELL + CELL / 2 + 1);
+    body.forEach((s, i) => {
+      ctx.fillStyle = color(i ? "--type" : "--accent");
+      ctx.globalAlpha = i ? Math.max(0.45, 1 - i / (body.length + 6)) : 1;
+      rounded(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4, 5);
+    });
+    ctx.globalAlpha = 1;
+    if (state === "ready") card([
+      ["snake.py", "--accent", 600],
+      ["Eat the bugs. Avoid walls and yourself.", "--fg"],
+      [narrow() ? "Swipe to steer." : "Arrow keys or WASD to steer.", "--muted"],
+      [narrow() ? "Tap to start" : "Press Space to start", "--faint"],
+    ]);
+    if (state === "paused") card([["# paused", "--accent", 600], [narrow() ? "Tap to resume" : "Press Space to resume", "--faint"]]);
+    if (state === "over") card([
+      ["Traceback (most recent call last):", "--faint"],
+      [error, "--kw", 600],
+      [`score ${score} · best ${best}`, "--fg"],
+      [narrow() ? "Tap to play again" : "Press Space to play again", "--faint"],
+    ]);
+  }
+
+  // Pointer: a tap starts or pauses; a drag steers (each 24px of drag is one turn, so one long swipe can make two).
+  let from = null;
+  function onDown(e) { from = { x: e.clientX, y: e.clientY, moved: false }; cv.setPointerCapture(e.pointerId); }
+  function onMove(e) {
+    if (!from) return;
+    const dx = e.clientX - from.x, dy = e.clientY - from.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    Math.abs(dx) > Math.abs(dy) ? turn(Math.sign(dx), 0) : turn(0, Math.sign(dy));
+    from = { x: e.clientX, y: e.clientY, moved: true };
+  }
+  function onUp() {
+    if (from && !from.moved) state === "playing" ? pause() : play();
+    from = null;
+  }
+  const resize = new ResizeObserver(() => {
+    if (!cv || state === "playing") return;
+    if (fit()) { state = "ready"; reset(); }
+    draw();
+  });
+
+  const KEYS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
+  document.addEventListener("keydown", (e) => {
+    if (!cv || !$("#paletteWrap").hidden || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+    if (k) { e.preventDefault(); turn(...k); }
+    if (e.key === " ") { e.preventDefault(); state === "playing" ? pause() : play(); }
+  });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
+
+  return {
+    mount(canvas) {
+      cv = canvas; ctx = cv.getContext("2d");
+      const resized = fit();
+      if (resized || !body) { state = "ready"; reset(); }
+      cv.addEventListener("pointerdown", onDown);
+      cv.addEventListener("pointermove", onMove);
+      cv.addEventListener("pointerup", onUp);
+      cv.addEventListener("pointercancel", () => (from = null));
+      resize.observe(cv.parentElement);
+      status(); draw();
+    },
+    unmount() {
+      if (!cv) return;
+      pause(); resize.disconnect(); cv = null;
+    },
+  };
+})();
 
 /* ---------- agent ---------- */
 const INTENTS = [
